@@ -231,7 +231,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                'django_tenants.context_processors.current_tenant',  # ← MULTITENANCY
+                # django_tenants no provee context_processor en versiones recientes
             ],
         },
     },
