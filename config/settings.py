@@ -264,10 +264,9 @@ import dj_database_url
 if os.environ.get('DATABASE_URL'):
     # Render, Heroku u otras plataformas que usan DATABASE_URL
     DATABASES = {
-        'default': dj_database_url.parse(
-            os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            ssl_require=True
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600
         )
     }
     # Asegurar que use el backend de django-tenants
