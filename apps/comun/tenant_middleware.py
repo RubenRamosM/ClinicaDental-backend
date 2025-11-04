@@ -2,12 +2,12 @@
 Middleware personalizado para detectar tenant desde header HTTP
 Compatible con django-tenants para deployment en Render con frontend en Vercel
 """
-from django_tenants.middleware.main import TenantMainMiddleware
+from django_tenants.middleware.main import BaseTenantMiddleware
 from django.http import Http404
 from apps.comun.models import Clinica
 
 
-class TenantHeaderMiddleware(TenantMainMiddleware):
+class TenantHeaderMiddleware(BaseTenantMiddleware):
     """
     Middleware que detecta el tenant desde el header X-Tenant-Subdomain
     en lugar de usar el hostname.
@@ -21,10 +21,9 @@ class TenantHeaderMiddleware(TenantMainMiddleware):
     Caso especial: Si no hay header, usa 'public' (tenant por defecto)
     """
     
-    def get_tenant(self, model, hostname, request):
+    def get_tenant(self, request):
         """
-        Sobrescribe el método de TenantMainMiddleware para buscar por header
-        en lugar de por hostname.
+        Sobrescribe el método de BaseTenantMiddleware para buscar por header.
         """
         # Obtener el subdomain desde el header HTTP
         subdomain = request.headers.get('X-Tenant-Subdomain', '').strip().lower()
@@ -33,10 +32,10 @@ class TenantHeaderMiddleware(TenantMainMiddleware):
         if not subdomain:
             subdomain = 'public'
         
-        # Buscar el tenant por schema_name
+        # Buscar el tenant por schema_name usando el modelo Clinica
         try:
-            tenant = model.objects.get(schema_name=subdomain)
+            tenant = Clinica.objects.get(schema_name=subdomain)
             return tenant
-        except model.DoesNotExist:
+        except Clinica.DoesNotExist:
             # Si el tenant no existe, retornar error 404
             raise Http404(f"Tenant '{subdomain}' no encontrado")
