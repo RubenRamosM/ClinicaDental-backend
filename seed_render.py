@@ -167,62 +167,74 @@ def poblar_datos_clinica(clinica):
     print("\n📋 Creando datos base...")
     
     # Tipos de Usuario
-    tipo_admin = Tipodeusuario.objects.create(
-        id=1, rol='Administrador',
-        descripcion='Usuario administrador del sistema'
+    tipo_admin, _ = Tipodeusuario.objects.get_or_create(
+        id=1,
+        defaults={'rol': 'Administrador', 'descripcion': 'Usuario administrador del sistema'}
     )
-    tipo_odontologo = Tipodeusuario.objects.create(
-        id=2, rol='Odontólogo',
-        descripcion='Profesional odontólogo'
+    tipo_odontologo, _ = Tipodeusuario.objects.get_or_create(
+        id=2,
+        defaults={'rol': 'Odontólogo', 'descripcion': 'Profesional odontólogo'}
     )
-    tipo_recepcionista = Tipodeusuario.objects.create(
-        id=3, rol='Recepcionista',
-        descripcion='Personal de recepción'
+    tipo_recepcionista, _ = Tipodeusuario.objects.get_or_create(
+        id=3,
+        defaults={'rol': 'Recepcionista', 'descripcion': 'Personal de recepción'}
     )
-    tipo_paciente = Tipodeusuario.objects.create(
-        id=4, rol='Paciente',
-        descripcion='Paciente de la clínica'
+    tipo_paciente, _ = Tipodeusuario.objects.get_or_create(
+        id=4,
+        defaults={'rol': 'Paciente', 'descripcion': 'Paciente de la clínica'}
     )
     
     # Horarios (8:00 AM - 6:00 PM cada 30 minutos)
     horarios = []
     for hour in range(8, 18):
         for minute in [0, 30]:
-            horario = Horario.objects.create(hora=f"{hour:02d}:{minute:02d}:00")
+            horario, _ = Horario.objects.get_or_create(hora=f"{hour:02d}:{minute:02d}:00")
             horarios.append(horario)
     
     # Estados de Consulta
     estados = {
-        'pendiente': Estadodeconsulta.objects.create(id=1, estado='Pendiente'),
-        'confirmada': Estadodeconsulta.objects.create(id=2, estado='Confirmada'),
-        'en_consulta': Estadodeconsulta.objects.create(id=3, estado='En Consulta'),
-        'completada': Estadodeconsulta.objects.create(id=4, estado='Completada'),
-        'cancelada': Estadodeconsulta.objects.create(id=5, estado='Cancelada'),
-        'no_asistio': Estadodeconsulta.objects.create(id=6, estado='No Asistió'),
+        'pendiente': Estadodeconsulta.objects.get_or_create(id=1, defaults={'estado': 'Pendiente'})[0],
+        'confirmada': Estadodeconsulta.objects.get_or_create(id=2, defaults={'estado': 'Confirmada'})[0],
+        'en_consulta': Estadodeconsulta.objects.get_or_create(id=3, defaults={'estado': 'En Consulta'})[0],
+        'completada': Estadodeconsulta.objects.get_or_create(id=4, defaults={'estado': 'Completada'})[0],
+        'cancelada': Estadodeconsulta.objects.get_or_create(id=5, defaults={'estado': 'Cancelada'})[0],
+        'no_asistio': Estadodeconsulta.objects.get_or_create(id=6, defaults={'estado': 'No Asistió'})[0],
     }
     
     # Tipos de Consulta
     tipos_consulta = {
-        'primera_vez': Tipodeconsulta.objects.create(
-            id=1, nombreconsulta='Primera Vez',
-            permite_agendamiento_web=True, requiere_aprobacion=False,
-            es_urgencia=False, duracion_estimada=60
-        ),
-        'control': Tipodeconsulta.objects.create(
-            id=2, nombreconsulta='Control',
-            permite_agendamiento_web=True, requiere_aprobacion=False,
-            es_urgencia=False, duracion_estimada=30
-        ),
-        'tratamiento': Tipodeconsulta.objects.create(
-            id=3, nombreconsulta='Tratamiento',
-            permite_agendamiento_web=False, requiere_aprobacion=True,
-            es_urgencia=False, duracion_estimada=90
-        ),
-        'urgencia': Tipodeconsulta.objects.create(
-            id=4, nombreconsulta='Urgencia',
-            permite_agendamiento_web=True, requiere_aprobacion=False,
-            es_urgencia=True, duracion_estimada=45
-        ),
+        'primera_vez': Tipodeconsulta.objects.get_or_create(
+            id=1,
+            defaults={
+                'nombreconsulta': 'Primera Vez',
+                'permite_agendamiento_web': True, 'requiere_aprobacion': False,
+                'es_urgencia': False, 'duracion_estimada': 60
+            }
+        )[0],
+        'control': Tipodeconsulta.objects.get_or_create(
+            id=2,
+            defaults={
+                'nombreconsulta': 'Control',
+                'permite_agendamiento_web': True, 'requiere_aprobacion': False,
+                'es_urgencia': False, 'duracion_estimada': 30
+            }
+        )[0],
+        'tratamiento': Tipodeconsulta.objects.get_or_create(
+            id=3,
+            defaults={
+                'nombreconsulta': 'Tratamiento',
+                'permite_agendamiento_web': False, 'requiere_aprobacion': True,
+                'es_urgencia': False, 'duracion_estimada': 90
+            }
+        )[0],
+        'urgencia': Tipodeconsulta.objects.get_or_create(
+            id=4,
+            defaults={
+                'nombreconsulta': 'Urgencia',
+                'permite_agendamiento_web': True, 'requiere_aprobacion': False,
+                'es_urgencia': True, 'duracion_estimada': 45
+            }
+        )[0],
     }
     
     # Tipos de Pago
