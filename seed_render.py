@@ -69,19 +69,21 @@ def crear_tenant_public():
         public_tenant = Clinica.objects.get(schema_name='public')
         print("✅ Tenant público ya existe")
         print(f"   - Nombre: {public_tenant.nombre}")
-        print(f"   - NIT: {public_tenant.nit}")
+        print(f"   - RUC: {public_tenant.ruc}")
         return public_tenant
     
     # Crear tenant público
     public_tenant = Clinica.objects.create(
         schema_name='public',
         nombre='Sistema Central',
-        nit='0000000000',
+        ruc='0000000000',
         direccion='Santa Cruz, Bolivia',
         telefono='00000000',
         email='sistema@psicoadmin.xyz',
-        activo=True,
-        es_tenant_publico=True
+        admin_nombre='Administrador Sistema',
+        admin_email='admin@psicoadmin.xyz',
+        activa=True,
+        plan='empresarial'
     )
     
     # Crear dominio para el tenant público (Render)
@@ -114,12 +116,17 @@ def crear_clinica_principal():
     clinica = Clinica.objects.create(
         schema_name='clinica1',
         nombre='Clínica Dental Norte',
-        nit='1234567890',
+        ruc='1234567890',
         direccion='Av. San Martin #456, Santa Cruz',
         telefono='3-3456789',
         email='contacto@clinica1.psicoadmin.xyz',
-        activo=True,
-        es_tenant_publico=False
+        admin_nombre='Dr. Juan Pérez',
+        admin_email='admin@clinica1.psicoadmin.xyz',
+        admin_telefono='70000000',
+        activa=True,
+        plan='profesional',
+        max_usuarios=20,
+        max_pacientes=500
     )
     
     # Crear dominios
@@ -140,7 +147,7 @@ def crear_clinica_principal():
     print("✅ Clínica principal creada")
     print(f"   - Nombre: {clinica.nombre}")
     print(f"   - Schema: {clinica.schema_name}")
-    print(f"   - NIT: {clinica.nit}")
+    print(f"   - RUC: {clinica.ruc}")
     print(f"   - Dominios:")
     print(f"     • clinica1.onrender.com")
     print(f"     • clinica1.psicoadmin.xyz (principal)")
