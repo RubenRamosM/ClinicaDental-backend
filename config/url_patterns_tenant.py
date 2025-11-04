@@ -1,26 +1,13 @@
+"""
+URLs para TENANTS DE CLÍNICAS (clinica1.localhost, clinica2.localhost, etc.)
+Todas las operaciones de la clínica
+"""
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
-# =============================================================================
-# URLs para TENANT PÚBLICO (localhost)
-# Solo administración del sistema multitenancy
-# =============================================================================
-urlpatterns_public = [
-    # Admin de Django (solo para super administradores)
-    path('admin/', admin.site.urls),
-    
-    # API de gestión de clínicas (SOLO EN PÚBLICO)
-    path('api/v1/clinicas/', include('apps.comun.urls')),  # Gestionar clínicas
-    
-    # Autenticación (necesaria en ambos)
-    path('api/v1/auth/', include('apps.autenticacion.urls')),
-]
-
-# =============================================================================
-# URLs para TENANTS (clinica1.localhost, clinica2.localhost, etc.)
-# Operaciones específicas de cada clínica
-# =============================================================================
-urlpatterns_tenant = [
+urlpatterns = [
     # Admin de Django (para administradores de la clínica)
     path('admin/', admin.site.urls),
     
@@ -74,3 +61,7 @@ urlpatterns_tenant = [
     # Gestión de Inventario de la clínica
     path('api/v1/inventario/', include('apps.inventario.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

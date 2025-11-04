@@ -186,7 +186,8 @@ DATABASE_ROUTERS = [
 # Middleware
 # ------------------------------------
 MIDDLEWARE = [
-    'django_tenants.middleware.main.TenantMainMiddleware',  # ← PRIMERO (multitenancy)
+    'django_tenants.middleware.main.TenantMainMiddleware',  # ← PRIMERO (detecta tenant)
+    'apps.comun.middleware.TenantURLRoutingMiddleware',  # ← SEGUNDO (cambia URLs según tenant)
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
