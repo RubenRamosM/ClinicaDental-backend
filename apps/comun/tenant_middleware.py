@@ -40,21 +40,3 @@ class TenantHeaderMiddleware(TenantMainMiddleware):
         except model.DoesNotExist:
             # Si el tenant no existe, retornar error 404
             raise Http404(f"Tenant '{subdomain}' no encontrado")
-    
-    def process_request(self, request):
-        """
-        Procesa la petición y establece el tenant basado en el header
-        """
-        # Obtener el modelo de tenant (Clinica)
-        connection = self.get_connection(request)
-        hostname = self.hostname_from_request(request)
-        
-        # Usar nuestro método personalizado get_tenant
-        tenant = self.get_tenant(Clinica, hostname, request)
-        
-        # Establecer el tenant en la conexión
-        request.tenant = tenant
-        connection.set_tenant(tenant)
-        
-        # Establecer el schema en la conexión
-        self.setup_url_routing(request)
