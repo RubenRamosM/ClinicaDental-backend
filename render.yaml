@@ -1,0 +1,63 @@
+services:
+  # Servicio Web (Django)
+  - type: web
+    name: clinicadental-backend
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate_schemas --shared"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.7"
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clinicadental-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,.psicoadmin.xyz,psicoadmin.xyz,www.psicoadmin.xyz,localhost"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://psicoadmin.xyz,https://www.psicoadmin.xyz,https://clinicadental-backend.onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://psicoadmin.xyz,https://www.psicoadmin.xyz,https://clinicadental-backend.onrender.com,https://*.psicoadmin.xyz"
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        value: "clinica-dental-bucket"
+      - key: AWS_S3_REGION_NAME
+        value: "us-east-1"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SAAS_BASE_DOMAIN
+        value: "psicoadmin.xyz"
+      - key: SAAS_PUBLIC_URL
+        value: "https://psicoadmin.xyz"
+
+# Base de datos PostgreSQL
+databases:
+  - name: clinicadental-db
+    databaseName: clinicadental
+    user: clinicadental_user
+    plan: free
+    region: oregon

@@ -19,29 +19,40 @@ if not SECRET_KEY:
     raise Exception("DJANGO_SECRET_KEY no está configurada en .env")
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Por defecto False en producción
+
 # ------------------------------------
 # Seguridad - Allowed Hosts / CORS / CSRF
 # ------------------------------------
-ALLOWED_HOSTS = [
-    "localhost",
-    ".dpdns.org",
-    "127.0.0.1",
-    "3.137.195.59",
-    "18.220.214.178",
-    "18.224.189.52",
-    ".amazonaws.com",
-    "ec2-18-220-214-178.us-east-2.compute.amazonaws.com",
-    "notificct.dpdns.org",
-    "balancearin-1841542738.us-east-2.elb.amazonaws.com",
-    ".localhost",
-    ".test",  # Para desarrollo local con subdominios
-    ".notificct.dpdns.org",
-    # Vercel deployment
-    "buy-dental-smile.vercel.app",
-    # Desarrollo móvil
-    "10.0.2.2",  # Emulador Android
-    "10.0.3.2",  # Emulador Android (alternativo)
-]
+# Permitir configuración desde variable de entorno (para Render/producción)
+if os.environ.get('ALLOWED_HOSTS'):
+    ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS').split(',')]
+else:
+    # Configuración por defecto para desarrollo
+    ALLOWED_HOSTS = [
+        "localhost",
+        ".dpdns.org",
+        "127.0.0.1",
+        "3.137.195.59",
+        "18.220.214.178",
+        "18.224.189.52",
+        ".amazonaws.com",
+        "ec2-18-220-214-178.us-east-2.compute.amazonaws.com",
+        "notificct.dpdns.org",
+        "balancearin-1841542738.us-east-2.elb.amazonaws.com",
+        ".localhost",
+        ".test",  # Para desarrollo local con subdominios
+        ".notificct.dpdns.org",
+        # Vercel deployment
+        "buy-dental-smile.vercel.app",
+        # Desarrollo móvil
+        "10.0.2.2",  # Emulador Android
+        "10.0.3.2",  # Emulador Android (alternativo)
+        # Render
+        ".onrender.com",
+        ".psicoadmin.xyz",
+        "psicoadmin.xyz",
+        "www.psicoadmin.xyz",
+    ]
 
 # En desarrollo, permitir también IPs de red local (192.168.*.*)
 if DEBUG:
@@ -62,27 +73,27 @@ if DEBUG:
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://\w+\.dpdns\.org$",  # Permite https://cualquier-subdominio.dpdns.org
-    r"^http://[\w-]+\.localhost:\d+$",  # Subdominios locales (norte.localhost:8000, sur.localhost:5173, etc.)
+    r"^http://[\w-]+\.localhost:\d+$",  # Subdominios locales
     r"^https://[\w-]+\.vercel\.app$",  # Vercel deployments
-    r"^http://localhost:\d+$",  # Desarrollo local en cualquier puerto
+    r"^http://localhost:\d+$",  # Desarrollo local
+    r"^https://[\w-]+\.psicoadmin\.xyz$",  # Subdominios de producción
+    r"^https://[\w-]+\.onrender\.com$",  # Render deployments
 ]
 
 # En desarrollo, permitir todos los orígenes (incluyendo subdominios)
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    # En producción, lista específica de orígenes permitidos
-    CORS_ALLOWED_ORIGINS = [
-        "https://clinicadental.com",  # Dominio público (landing page)
-        # Los subdominios de tenants se manejan por el regex de arriba
-        "https://norte.clinicadental.com",
-        "https://sur.clinicadental.com",
-        "https://este.clinicadental.com",
-        "https://oeste.clinicadental.com",
-        # Vercel frontend
-        "https://buy-dental-smile.vercel.app",
-        "http://localhost:5173",
-    ]
+    # En producción, obtener de variable de entorno o usar defaults
+    if os.environ.get('CORS_ALLOWED_ORIGINS'):
+        CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS').split(',')]
+    else:
+        CORS_ALLOWED_ORIGINS = [
+            "https://psicoadmin.xyz",
+            "https://www.psicoadmin.xyz",
+            # Los subdominios se manejan por el regex de arriba
+            "https://buy-dental-smile.vercel.app",
+        ]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -100,30 +111,36 @@ CORS_ALLOW_HEADERS = [
     'x-tenant-subdomain',  # Header personalizado para multi-tenancy
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://18.220.214.178",
-    "https://18.220.214.178",
-    "https://ec2-18-220-214-178.us-east-2.compute.amazonaws.com",
-    # Multi-tenancy: Permitir subdominios en desarrollo
-    "http://localhost:5173",
-    "http://*.localhost:5173",
-    "http://norte.localhost:5173",
-    "http://sur.localhost:5173",
-    "http://este.localhost:5173",
-    # Multi-tenancy: Permitir subdominios en Django development server
-    "http://localhost:8000",
-    "http://*.localhost:8000",
-    "http://norte.localhost:8000",
-    "http://sur.localhost:8000",
-    "http://este.localhost:8000",
-    # Multi-tenancy: Permitir subdominios en producción
-    "https://notificct.dpdns.org",
-    "https://*.notificct.dpdns.org",
-    "https://*.dpdns.org",
-    # Vercel frontend
-    "https://buy-dental-smile.vercel.app",
-    "https://*.vercel.app",
-]
+# CSRF Trusted Origins - Permitir configuración desde variable de entorno
+if os.environ.get('CSRF_TRUSTED_ORIGINS'):
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS').split(',')]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://18.220.214.178",
+        "https://18.220.214.178",
+        "https://ec2-18-220-214-178.us-east-2.compute.amazonaws.com",
+        # Multi-tenancy: Permitir subdominios en desarrollo
+        "http://localhost:5173",
+        "http://*.localhost:5173",
+        "http://norte.localhost:5173",
+        "http://sur.localhost:5173",
+        "http://este.localhost:5173",
+        # Multi-tenancy: Permitir subdominios en Django development server
+        "http://localhost:8000",
+        "http://*.localhost:8000",
+        "http://norte.localhost:8000",
+        "http://sur.localhost:8000",
+        "http://este.localhost:8000",
+        # Render/Producción
+        "https://psicoadmin.xyz",
+        "https://www.psicoadmin.xyz",
+        "https://*.psicoadmin.xyz",
+        "https://*.onrender.com",
+        "https://*.notificct.dpdns.org",
+        "https://*.dpdns.org",
+        "https://buy-dental-smile.vercel.app",
+        "https://*.vercel.app",
+    ]
 
 # =================================================================
 # MULTITENANCY CON DJANGO-TENANTS
@@ -238,19 +255,38 @@ AWS_DEFAULT_ACL = None
 AWS_S3_VERITY = True
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django_tenants.postgresql_backend",  # ← Backend de django-tenants
-        "NAME": os.environ.get('DB_NAME'),
-        "USER": os.environ.get('DB_USER'),
-        "PASSWORD": os.environ.get('DB_PASSWORD'),
-        "HOST": os.environ.get('DB_HOST'),
-        "PORT": os.environ.get('DB_PORT', '5432'),
-        "OPTIONS": {
-            "sslmode": "disable" if os.environ.get('DB_HOST') == 'localhost' else "require",
-        },
+# ------------------------------------
+# Base de datos (PostgreSQL)
+# ------------------------------------
+# Soporte para DATABASE_URL (Render/Heroku) o variables individuales
+import dj_database_url
+
+if os.environ.get('DATABASE_URL'):
+    # Render, Heroku u otras plataformas que usan DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.parse(
+            os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+    # Asegurar que use el backend de django-tenants
+    DATABASES['default']['ENGINE'] = 'django_tenants.postgresql_backend'
+else:
+    # Variables individuales (desarrollo local)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django_tenants.postgresql_backend",
+            "NAME": os.environ.get('DB_NAME'),
+            "USER": os.environ.get('DB_USER'),
+            "PASSWORD": os.environ.get('DB_PASSWORD'),
+            "HOST": os.environ.get('DB_HOST'),
+            "PORT": os.environ.get('DB_PORT', '5432'),
+            "OPTIONS": {
+                "sslmode": "disable" if os.environ.get('DB_HOST') == 'localhost' else "require",
+            },
+        }
+    }
 
 # ------------------------------------
 # Password validators
