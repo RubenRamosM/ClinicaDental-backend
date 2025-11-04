@@ -17,8 +17,11 @@ else
     echo "${DATABASE_URL:0:50}..."
 fi
 
-echo "️ Aplicando migraciones al schema público (shared)..."
+echo "🗄️ Aplicando migraciones al schema público (tablas compartidas)..."
 python manage.py migrate_schemas --shared
 
-echo "✅ Schema público creado. No hay tenants que migrar en el primer deploy."
+echo "📋 Aplicando migraciones de la app 'comun' (Clinica, Dominio)..."
+python manage.py migrate comun --database=default
+
+echo "✅ Schema público completado con todas las tablas necesarias."
 echo "✅ Build completado exitosamente!"
