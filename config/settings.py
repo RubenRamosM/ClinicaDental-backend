@@ -14,9 +14,9 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Seguridad / Debug
 # ------------------------------------
 # IMPORTANTE: Usa variables de entorno en producción
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY') or os.environ.get('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
-    raise Exception("DJANGO_SECRET_KEY no está configurada en .env")
+    raise Exception("SECRET_KEY o DJANGO_SECRET_KEY no está configurada")
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Por defecto False en producción
 
