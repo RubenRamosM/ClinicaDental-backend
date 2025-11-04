@@ -76,7 +76,8 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://[\w-]+\.localhost:\d+$",  # Subdominios locales
     r"^https://[\w-]+\.vercel\.app$",  # Vercel deployments
     r"^http://localhost:\d+$",  # Desarrollo local
-    r"^https://[\w-]+\.psicoadmin\.xyz$",  # Subdominios de producción
+    r"^https://[\w-]+\.psicoadmin\.xyz$",  # Subdominios de producción (legacy)
+    r"^https://[\w-]+\.dentaabcxy\.store$",  # Subdominios de producción (nuevo dominio) ✅
     r"^https://[\w-]+\.onrender\.com$",  # Render deployments
 ]
 
@@ -91,6 +92,8 @@ else:
         CORS_ALLOWED_ORIGINS = [
             "https://psicoadmin.xyz",
             "https://www.psicoadmin.xyz",
+            "https://dentaabcxy.store",  # ✅ Dominio base nuevo
+            "https://www.dentaabcxy.store",  # ✅ Con www
             # Los subdominios se manejan por el regex de arriba
             "https://buy-dental-smile.vercel.app",
         ]
@@ -135,6 +138,9 @@ else:
         "https://psicoadmin.xyz",
         "https://www.psicoadmin.xyz",
         "https://*.psicoadmin.xyz",
+        "https://dentaabcxy.store",  # ✅ Nuevo dominio base
+        "https://www.dentaabcxy.store",  # ✅ Con www
+        "https://*.dentaabcxy.store",  # ✅ Todos los subdominios (clinica1, clinica2, etc.)
         "https://*.onrender.com",
         "https://*.notificct.dpdns.org",
         "https://*.dpdns.org",
