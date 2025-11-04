@@ -238,15 +238,15 @@ def poblar_datos_clinica(clinica):
     }
     
     # Tipos de Pago
-    Tipopago.objects.create(id=1, nombrepago='Efectivo')
-    Tipopago.objects.create(id=2, nombrepago='Tarjeta')
-    Tipopago.objects.create(id=3, nombrepago='Transferencia')
-    Tipopago.objects.create(id=4, nombrepago='QR')
+    Tipopago.objects.get_or_create(id=1, defaults={'nombrepago': 'Efectivo'})
+    Tipopago.objects.get_or_create(id=2, defaults={'nombrepago': 'Tarjeta'})
+    Tipopago.objects.get_or_create(id=3, defaults={'nombrepago': 'Transferencia'})
+    Tipopago.objects.get_or_create(id=4, defaults={'nombrepago': 'QR'})
     
     # Estados de Factura
-    Estadodefactura.objects.create(id=1, estado='Pendiente')
-    Estadodefactura.objects.create(id=2, estado='Pagada')
-    Estadodefactura.objects.create(id=3, estado='Anulada')
+    Estadodefactura.objects.get_or_create(id=1, defaults={'estado': 'Pendiente'})
+    Estadodefactura.objects.get_or_create(id=2, defaults={'estado': 'Pagada'})
+    Estadodefactura.objects.get_or_create(id=3, defaults={'estado': 'Anulada'})
     
     print(f"  ✓ {len(horarios)} horarios creados")
     print(f"  ✓ {len(estados)} estados de consulta")
@@ -258,22 +258,29 @@ def poblar_datos_clinica(clinica):
     print("\n👥 Creando usuarios...")
     
     # ADMINISTRADOR
-    admin_django = User.objects.create_user(
+    admin_django, _ = User.objects.get_or_create(
         username='admin@clinica1.com',
-        email='admin@clinica1.com',
-        password='admin123',
-        is_staff=True,
-        is_superuser=True
+        defaults={
+            'email': 'admin@clinica1.com',
+            'is_staff': True,
+            'is_superuser': True
+        }
     )
-    admin_usuario = Usuario.objects.create(
-        nombre='Admin',
-        apellido='Sistema',
+    if not admin_django.has_usable_password():
+        admin_django.set_password('admin123')
+        admin_django.save()
+    
+    admin_usuario, _ = Usuario.objects.get_or_create(
         correoelectronico='admin@clinica1.com',
-        sexo='M',
-        telefono='70000000',
-        idtipousuario=tipo_admin
+        defaults={
+            'nombre': 'Admin',
+            'apellido': 'Sistema',
+            'sexo': 'M',
+            'telefono': '70000000',
+            'idtipousuario': tipo_admin
+        }
     )
-    Token.objects.create(user=admin_django)
+    Token.objects.get_or_create(user=admin_django)
     
     # ODONTÓLOGOS
     odontologos = []
@@ -296,26 +303,33 @@ def poblar_datos_clinica(clinica):
     ]
     
     for idx, data in enumerate(odontologos_data, 1):
-        django_user = User.objects.create_user(
+        django_user, _ = User.objects.get_or_create(
             username=data['email'],
-            email=data['email'],
-            password='odontologo123'
+            defaults={'email': data['email']}
         )
-        usuario = Usuario.objects.create(
-            nombre=data['nombre'],
-            apellido=data['apellido'],
+        if not django_user.has_usable_password():
+            django_user.set_password('odontologo123')
+            django_user.save()
+            
+        usuario, _ = Usuario.objects.get_or_create(
             correoelectronico=data['email'],
-            sexo='M' if idx % 2 == 1 else 'F',
-            telefono=f'7000000{idx}',
-            idtipousuario=tipo_odontologo
+            defaults={
+                'nombre': data['nombre'],
+                'apellido': data['apellido'],
+                'sexo': 'M' if idx % 2 == 1 else 'F',
+                'telefono': f'7000000{idx}',
+                'idtipousuario': tipo_odontologo
+            }
         )
-        odontologo = Odontologo.objects.create(
+        odontologo, _ = Odontologo.objects.get_or_create(
             codusuario=usuario,
-            especialidad=data['especialidad'],
-            nromatricula=data['matricula'],
-            experienciaprofesional=data['experiencia']
+            defaults={
+                'especialidad': data['especialidad'],
+                'nromatricula': data['matricula'],
+                'experienciaprofesional': data['experiencia']
+            }
         )
-        Token.objects.create(user=django_user)
+        Token.objects.get_or_create(user=django_user)
         odontologos.append(odontologo)
     
     # RECEPCIONISTA
