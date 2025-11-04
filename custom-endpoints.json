@@ -1,0 +1,1172 @@
+[
+  {
+    "app": "apps.usuarios",
+    "viewset": "PacienteViewSet",
+    "action_name": "historial",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "historial",
+    "docstring": "Obtener historial de consultas del paciente.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['get'])\n    def historial(self, request, pk=None):\n        \"\"\"\n        Obtener historial de consultas del paciente.\n        \"\"\"\n        paciente = self.get_object()\n        from apps.citas.models import Consulta\n        from apps.citas.serializers import ConsultaSerializer\n        \n        consultas = Consulta.objects.filter(codpaciente=paciente).order_by('-fecha')\n        serializer = ConsultaSerializer(consultas, many=True)\n        \n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.usuarios",
+    "viewset": "PacienteViewSet",
+    "action_name": "mi_perfil",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "mi_perfil",
+    "docstring": "Obtener perfil del paciente autenticado.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def mi_perfil(self, request):\n        \"\"\"\n        Obtener perfil del paciente autenticado.\n        \"\"\"\n        try:\n            paciente = Paciente.objects.get(codusuario=request.user)\n            serializer = self.get_serializer(paciente)\n            return Response(serializer.data)\n        except Paciente.DoesNotExist:\n            return Response(\n                {'error': 'El usuario no es un paciente'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n"
+  },
+  {
+    "app": "apps.usuarios",
+    "viewset": "UsuarioViewSet",
+    "action_name": "actualizar_notificaciones",
+    "methods": [
+      "patch"
+    ],
+    "detail": true,
+    "url_path": "actualizar_notificaciones",
+    "docstring": "Actualizar preferencias de notificaciones de un usuario.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['patch'])\n    def actualizar_notificaciones(self, request, pk=None):\n        \"\"\"\n        Actualizar preferencias de notificaciones de un usuario.\n        \"\"\"\n        usuario = self.get_object()\n        serializer = UsuarioActualizarNotificacionesSerializer(\n            usuario, data=request.data, partial=True\n        )\n        \n        if serializer.is_valid():\n            serializer.save()\n            return Response(serializer.data)\n        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n"
+  },
+  {
+    "app": "apps.usuarios",
+    "viewset": "UsuarioViewSet",
+    "action_name": "campos_requeridos",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "crear-usuario/campos-requeridos",
+    "docstring": "Obtener campos requeridos para crear un usuario según su tipo.\n\nEndpoint: GET /api/v1/usuarios/usuarios/crear-usuario/campos-requeridos/?tipo=X\n\nParámetros query:\n- tipo: ID del tipo de usuario (1=Paciente, 2=Odontólogo, 3=Recepcionista, 4=Administrador)\n\nRespuesta:\n{\n  \"campos\": [\"nombre\", \"apellido\", \"correo\", ...],\n  \"opcionales\": [\"telefono\", ...]\n}",
+    "response_structure": "Response({\n            'tipo_usuario': {\n                'id': tipo_usuario.id,\n                'nombre': tipo_usuario.rol\n            },\n            'campos_requeridos': campos_base + campos_especificos,\n            'campos_opcionales': campos_opcionales_base + opcionales_especificos\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='crear-usuario/campos-requeridos')\n    def campos_requeridos(self, request):\n        \"\"\"\n        Obtener campos requeridos para crear un usuario según su tipo.\n        \n        Endpoint: GET /api/v1/usuarios/usuarios/crear-usuario/campos-requeridos/?tipo=X\n        \n        Parámetros query:\n        - tipo: ID del tipo de usuario (1=Paciente, 2=Odontólogo, 3=Recepcionista, 4=Administrador)\n        \n        Respuesta:\n        {\n          \"campos\": [\"nombre\", \"apellido\", \"correo\", ...],\n          \"opcionales\": [\"telefono\", ...]\n        }\n        \"\"\"\n        tipo_usuario_id = request.query_params.get('tipo')\n        \n        if not tipo_usuario_id:\n            return Response(\n                {'error': 'Parámetro \"tipo\" es requerido'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        try:\n            tipo_usuario = Tipodeusuario.objects.get(id=tipo_usuario_id)\n        except Tipodeusuario.DoesNotExist:\n            return Response(\n                {'error': 'Tipo de usuario no encontrado'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n        \n        # Campos comunes para todos los tipos de usuario\n        campos_base = [\n            'nombre',\n            'apellido',\n            'correoelectronico',\n            'password',\n            'sexo'\n        ]\n        \n        campos_opcionales_base = [\n            'telefono',\n            'direccion',\n            'fechanacimiento'\n        ]\n        \n        # Campos específicos según tipo de usuario\n        if tipo_usuario_id == '1':  # Paciente\n            campos_especificos = ['carnetidentidad']\n            opcionales_especificos = ['gruposanguineo', 'alergias', 'contactoemergencia']\n        elif tipo_usuario_id == '2':  # Odontólogo\n            campos_especificos = ['especialidad', 'numerolicencia']\n            opcionales_especificos = ['añosexperiencia']\n        elif tipo_usuario_id == '3':  # Recepcionista\n            campos_especificos = []\n            opcionales_especificos = ['turno']\n        elif tipo_usuario_id == '4':  # Administrador\n            campos_especificos = []\n            opcionales_especificos = []\n        else:\n            campos_especificos = []\n            opcionales_especificos = []\n        \n        return Response({\n            'tipo_usuario': {\n                'id': tipo_usuario.id,\n                'nombre': tipo_usuario.rol\n            },\n            'campos_requeridos': campos_base + campos_especificos,\n            'campos_opcionales': campos_opcionales_base + opcionales_especificos\n        })\n"
+  },
+  {
+    "app": "apps.usuarios",
+    "viewset": "UsuarioViewSet",
+    "action_name": "count",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "count",
+    "docstring": "Obtener conteo total de usuarios.\n\nEndpoint: GET /api/v1/usuarios/usuarios/count/\n\nRespuesta:\n{\n  \"count\": 150\n}",
+    "response_structure": "Response({\n            'count': total\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='count')\n    def count(self, request):\n        \"\"\"\n        Obtener conteo total de usuarios.\n        \n        Endpoint: GET /api/v1/usuarios/usuarios/count/\n        \n        Respuesta:\n        {\n          \"count\": 150\n        }\n        \"\"\"\n        total = self.get_queryset().count()\n        \n        return Response({\n            'count': total\n        })\n"
+  },
+  {
+    "app": "apps.usuarios",
+    "viewset": "UsuarioViewSet",
+    "action_name": "crear_usuario",
+    "methods": [
+      "post"
+    ],
+    "detail": false,
+    "url_path": "crear-usuario",
+    "docstring": "Crear un nuevo usuario según su tipo.\n\nEndpoint: POST /api/v1/usuarios/usuarios/crear-usuario/\n\nBody:\n{\n  \"tipo_usuario\": 1-4,\n  \"datos\": {\n    \"nombre\": \"Juan\",\n    \"apellido\": \"Pérez\",\n    \"correoelectronico\": \"juan@example.com\",\n    \"password\": \"contraseña123\",\n    \"sexo\": \"Masculino\",\n    \"telefono\": \"12345678\",\n    ... campos específicos según tipo\n  }\n}",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['post'], url_path='crear-usuario', permission_classes=[IsAuthenticated, EsAdministrador])\n    def crear_usuario(self, request):\n        \"\"\"\n        Crear un nuevo usuario según su tipo.\n        \n        Endpoint: POST /api/v1/usuarios/usuarios/crear-usuario/\n        \n        Body:\n        {\n          \"tipo_usuario\": 1-4,\n          \"datos\": {\n            \"nombre\": \"Juan\",\n            \"apellido\": \"Pérez\",\n            \"correoelectronico\": \"juan@example.com\",\n            \"password\": \"contraseña123\",\n            \"sexo\": \"Masculino\",\n            \"telefono\": \"12345678\",\n            ... campos específicos según tipo\n          }\n        }\n        \"\"\"\n        from django.contrib.auth.hashers import make_password\n        from apps.profesionales.models import Odontologo, Recepcionista\n        \n        # Validar datos requeridos\n        tipo_usuario_id = request.data.get('tipo_usuario')\n        datos = request.data.get('datos', {})\n        \n        if not tipo_usuario_id:\n            return Response(\n                {'error': 'Campo \"tipo_usuario\" es requerido'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        if not datos:\n            return Response(\n                {'error': 'Campo \"datos\" es requerido'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Validar que el tipo de usuario existe\n        try:\n            tipo_usuario = Tipodeusuario.objects.get(id=tipo_usuario_id)\n        except Tipodeusuario.DoesNotExist:\n            return Response(\n                {'error': 'Tipo de usuario no encontrado'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n        \n        # Validar campos requeridos comunes\n        campos_requeridos = ['nombre', 'apellido', 'correoelectronico', 'password', 'sexo']\n        for campo in campos_requeridos:\n            if not datos.get(campo):\n                return Response(\n                    {'error': f'Campo \"{campo}\" es requerido'},\n                    status=status.HTTP_400_BAD_REQUEST\n                )\n        \n        # Validar campos específicos según tipo\n        if tipo_usuario_id == 1:  # Paciente\n            if not datos.get('carnetidentidad'):\n                return Response(\n                    {'error': 'Campo \"carnetidentidad\" es requerido para pacientes'},\n                    status=status.HTTP_400_BAD_REQUEST\n                )\n        elif tipo_usuario_id == 2:  # Odontólogo\n            if not datos.get('especialidad') or not datos.get('numerolicencia'):\n                return Response(\n                    {'error': 'Campos \"especialidad\" y \"numerolicencia\" son requeridos para odontólogos'},\n                    status=status.HTTP_400_BAD_REQUEST\n                )\n        \n        # Validar que el correo no esté en uso\n        if Usuario.objects.filter(correoelectronico=datos['correoelectronico']).exists():\n            return Response(\n                {'error': 'El correo electrónico ya está registrado'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Crear usuario base\n        try:\n            # Extraer password antes de crear el usuario\n            password = datos.pop('password')\n            \n            # Extraer campos específicos para no incluirlos en Usuario\n            campos_especificos = {}\n            if tipo_usuario_id == 1:  # Paciente\n                campos_especificos['carnetidentidad'] = datos.pop('carnetidentidad', None)\n                campos_especificos['gruposanguineo'] = datos.pop('gruposanguineo', None)\n                campos_especificos['alergias'] = datos.pop('alergias', None)\n                campos_especificos['contactoemergencia'] = datos.pop('contactoemergencia', None)\n            elif tipo_usuario_id == 2:  # Odontólogo\n                campos_especificos['especialidad'] = datos.pop('especialidad', None)\n                campos_especificos['numerolicencia'] = datos.pop('numerolicencia', None)\n                campos_especificos['añosexperiencia'] = datos.pop('añosexperiencia', None)\n            elif tipo_usuario_id == 3:  # Recepcionista\n                campos_especificos['turno'] = datos.pop('turno', None)\n            \n            # Extraer campos comunes opcionales\n            telefono = datos.pop('telefono', None)\n            direccion = datos.pop('direccion', None)\n            fechanacimiento = datos.pop('fechanacimiento', None)\n            \n            # Crear el usuario\n            usuario = Usuario.objects.create(\n                nombre=datos['nombre'],\n                apellido=datos['apellido'],\n                correoelectronico=datos['correoelectronico'],\n                sexo=datos.get('sexo', ''),\n                telefono=telefono or '',\n                idtipousuario=tipo_usuario\n            )\n            \n            # TODO: Implementar hashing de password cuando se integre autenticación\n            # Por ahora se guarda en texto plano (cambiar en producción)\n            # usuario.password = make_password(password)\n            # usuario.save()\n            \n            # Crear registro específico según tipo de usuario\n            registro_especifico = None\n            if tipo_usuario_id == 1:  # Paciente\n                registro_especifico = Paciente.objects.create(\n                    codusuario=usuario,\n                    carnetidentidad=campos_especificos.get('carnetidentidad'),\n                    fechanacimiento=fechanacimiento,\n                    direccion=direccion\n                )\n                # TODO: Agregar campos adicionales cuando estén en el modelo\n                # gruposanguineo, alergias, contactoemergencia\n                \n            elif tipo_usuario_id == 2:  # Odontólogo\n                registro_especifico = Odontologo.objects.create(\n                    codusuario=usuario,\n                    especialidad=campos_especificos.get('especialidad'),\n                    nromatricula=campos_especificos.get('numerolicencia'),\n                    experienciaprofesional=campos_especificos.get('añosexperiencia', '')\n                )\n                \n            elif tipo_usuario_id == 3:  # Recepcionista\n                registro_especifico = Recepcionista.objects.create(\n                    codusuario=usuario,\n                    habilidadessoftware=campos_especificos.get('turno', '')  # Mapeo temporal\n                )\n            \n            # Preparar respuesta\n            response_data = {\n                'mensaje': 'Usuario creado exitosamente',\n                'usuario': {\n                    'codigo': usuario.codigo,\n                    'nombre': usuario.nombre,\n                    'apellido': usuario.apellido,\n                    'correoelectronico': usuario.correoelectronico,\n                    'sexo': usuario.sexo,\n                    'telefono': usuario.telefono,\n                    'tipo_usuario': {\n                        'id': tipo_usuario.id,\n                        'nombre': tipo_usuario.rol\n                    }\n                }\n            }\n            \n            # Agregar datos específicos según tipo\n            if tipo_usuario_id == 1 and registro_especifico:\n                response_data['paciente'] = {\n                    'carnetidentidad': registro_especifico.carnetidentidad,\n                    'fechanacimiento': registro_especifico.fechanacimiento,\n                    'direccion': registro_especifico.direccion\n                }\n            elif tipo_usuario_id == 2 and registro_especifico:\n                response_data['odontologo'] = {\n                    'especialidad': registro_especifico.especialidad,\n                    'numerolicencia': registro_especifico.nromatricula,\n                    'experiencia': registro_especifico.experienciaprofesional\n                }\n            elif tipo_usuario_id == 3 and registro_especifico:\n                response_data['recepcionista'] = {\n                    'habilidades': registro_especifico.habilidadessoftware\n                }\n            \n            return Response(response_data, status=status.HTTP_201_CREATED)\n            \n        except Exception as e:\n            # Si algo falla, intentar eliminar el usuario si fue creado\n            if 'usuario' in locals():\n                usuario.delete()\n            \n            return Response(\n                {'error': f'Error al crear usuario: {str(e)}'},\n                status=status.HTTP_500_INTERNAL_SERVER_ERROR\n            )\n"
+  },
+  {
+    "app": "apps.usuarios",
+    "viewset": "UsuarioViewSet",
+    "action_name": "yo",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "yo",
+    "docstring": "Obtener información del usuario autenticado.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def yo(self, request):\n        \"\"\"\n        Obtener información del usuario autenticado.\n        \"\"\"\n        serializer = UsuarioDetalleSerializer(request.user)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "HistorialPagoViewSet",
+    "action_name": "anular",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "anular",
+    "docstring": "Anular un pago (cambiar estado a 'cancelado').\nSolo staff puede anular pagos.\nRequiere motivo de anulación en el body.",
+    "response_structure": "Response({\n            'mensaje': 'Pago anulado exitosamente',\n            'pago': serializer.data\n        }",
+    "source_code": "    @action(detail=True, methods=['post'], url_path='anular')\n    def anular(self, request, pk=None):\n        \"\"\"\n        Anular un pago (cambiar estado a 'cancelado').\n        Solo staff puede anular pagos.\n        Requiere motivo de anulación en el body.\n        \"\"\"\n        pago = self.get_object()\n        \n        if pago.estado == 'cancelado':\n            return Response(\n                {'error': 'El pago ya está cancelado'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        motivo = request.data.get('motivo')\n        if not motivo:\n            return Response(\n                {'error': 'Debe proporcionar un motivo de anulación'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        pago.estado = 'cancelado'\n        pago.notas = f\"{pago.notas or ''}\\n\\nANULADO: {motivo} (por {request.user.nombre} {request.user.apellido})\"\n        pago.save()\n        \n        serializer = self.get_serializer(pago)\n        return Response({\n            'mensaje': 'Pago anulado exitosamente',\n            'pago': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "HistorialPagoViewSet",
+    "action_name": "estadisticas",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "estadisticas",
+    "docstring": "Obtener estadísticas generales de pagos.\nDisponible solo para staff.",
+    "response_structure": "Response({\n            'total_completado': total_completado,\n            'cantidad_total': queryset.count(),\n            'por_estado': list(totales_por_estado),\n            'por_metodo_pago': list(totales_por_metodo)\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='estadisticas')\n    def estadisticas(self, request):\n        \"\"\"\n        Obtener estadísticas generales de pagos.\n        Disponible solo para staff.\n        \"\"\"\n        from decimal import Decimal\n        from django.db.models import Count\n        \n        # Verificar permisos\n        if not (hasattr(request.user, 'recepcionista') or request.user.is_staff):\n            return Response(\n                {'error': 'No tiene permisos para ver estadísticas'},\n                status=status.HTTP_403_FORBIDDEN\n            )\n        \n        queryset = self.queryset\n        \n        # Totales por estado\n        totales_por_estado = queryset.values('estado').annotate(\n            cantidad=Count('id'),\n            total=Sum('monto')\n        )\n        \n        # Totales por método de pago\n        totales_por_metodo = queryset.filter(estado='completado').values('metodo_pago').annotate(\n            cantidad=Count('id'),\n            total=Sum('monto')\n        )\n        \n        # Total general\n        total_completado = queryset.filter(estado='completado').aggregate(\n            total=Sum('monto')\n        )['total'] or Decimal('0')\n        \n        return Response({\n            'total_completado': total_completado,\n            'cantidad_total': queryset.count(),\n            'por_estado': list(totales_por_estado),\n            'por_metodo_pago': list(totales_por_metodo)\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "HistorialPagoViewSet",
+    "action_name": "mis_pagos",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "mis-pagos",
+    "docstring": "Obtener pagos del paciente autenticado.\nSolo disponible para pacientes.",
+    "response_structure": "Response({\n            'total_pagos': pagos.count(),\n            'total_pagado': total_pagado,\n            'pagos': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='mis-pagos')\n    def mis_pagos(self, request):\n        \"\"\"\n        Obtener pagos del paciente autenticado.\n        Solo disponible para pacientes.\n        \"\"\"\n        user = request.user\n        \n        if not hasattr(user, 'paciente'):\n            return Response(\n                {'error': 'Este endpoint solo está disponible para pacientes'},\n                status=status.HTTP_403_FORBIDDEN\n            )\n        \n        pagos = self.queryset.filter(plan_tratamiento__paciente=user.paciente)\n        serializer = self.get_serializer(pagos, many=True)\n        \n        # Calcular totales\n        from decimal import Decimal\n        total_pagado = pagos.filter(estado='completado').aggregate(\n            total=Sum('monto')\n        )['total'] or Decimal('0')\n        \n        return Response({\n            'total_pagos': pagos.count(),\n            'total_pagado': total_pagado,\n            'pagos': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "HistorialPagoViewSet",
+    "action_name": "por_plan",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-plan/(?P<plan_id>[^/.]+)",
+    "docstring": "Obtener todos los pagos de un plan de tratamiento específico.\nIncluye estadísticas de pago.",
+    "response_structure": "Response({\n            'plan_tratamiento': {\n                'id': plan.id,\n                'codigo': plan.codigo,\n                'descripcion': plan.descripcion,\n                'estado': plan.estado\n            },\n            'presupuesto': {\n                'id': presupuesto.id if presupuesto else None,\n                'codigo': presupuesto.codigo if presupuesto else None,\n                'total': total_presupuesto\n            },\n            'resumen_pagos': {\n                'total_presupuesto': total_presupuesto,\n                'total_pagado': total_pagado,\n                'saldo_pendiente': saldo_pendiente,\n                'cantidad_pagos': pagos.count()\n            },\n            'pagos': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-plan/(?P<plan_id>[^/.]+)')\n    def por_plan(self, request, plan_id=None):\n        \"\"\"\n        Obtener todos los pagos de un plan de tratamiento específico.\n        Incluye estadísticas de pago.\n        \"\"\"\n        from decimal import Decimal\n        \n        # Verificar que el plan existe\n        try:\n            plan = PlanTratamiento.objects.get(id=plan_id)\n        except PlanTratamiento.DoesNotExist:\n            return Response(\n                {'error': 'Plan de tratamiento no encontrado'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n        \n        # Filtrar pagos del plan\n        pagos = self.queryset.filter(plan_tratamiento=plan)\n        serializer = self.get_serializer(pagos, many=True)\n        \n        # Calcular estadísticas\n        total_pagado = pagos.filter(estado='completado').aggregate(\n            total=Sum('monto')\n        )['total'] or Decimal('0')\n        \n        # Obtener presupuesto aprobado\n        presupuesto = plan.presupuestos.filter(estado='aprobado').first()\n        total_presupuesto = presupuesto.total if presupuesto else Decimal('0')\n        saldo_pendiente = total_presupuesto - total_pagado\n        \n        return Response({\n            'plan_tratamiento': {\n                'id': plan.id,\n                'codigo': plan.codigo,\n                'descripcion': plan.descripcion,\n                'estado': plan.estado\n            },\n            'presupuesto': {\n                'id': presupuesto.id if presupuesto else None,\n                'codigo': presupuesto.codigo if presupuesto else None,\n                'total': total_presupuesto\n            },\n            'resumen_pagos': {\n                'total_presupuesto': total_presupuesto,\n                'total_pagado': total_pagado,\n                'saldo_pendiente': saldo_pendiente,\n                'cantidad_pagos': pagos.count()\n            },\n            'pagos': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "HistorialPagoViewSet",
+    "action_name": "por_presupuesto",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-presupuesto/(?P<presupuesto_id>[^/.]+)",
+    "docstring": "Obtener pagos asociados a un presupuesto específico.",
+    "response_structure": "Response({\n            'presupuesto': {\n                'id': presupuesto.id,\n                'codigo': presupuesto.codigo,\n                'total': presupuesto.total,\n                'estado': presupuesto.estado\n            },\n            'total_pagado': total_pagado,\n            'saldo_pendiente': presupuesto.total - total_pagado,\n            'pagos': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-presupuesto/(?P<presupuesto_id>[^/.]+)')\n    def por_presupuesto(self, request, presupuesto_id=None):\n        \"\"\"\n        Obtener pagos asociados a un presupuesto específico.\n        \"\"\"\n        from decimal import Decimal\n        \n        try:\n            presupuesto = Presupuesto.objects.get(id=presupuesto_id)\n        except Presupuesto.DoesNotExist:\n            return Response(\n                {'error': 'Presupuesto no encontrado'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n        \n        pagos = self.queryset.filter(presupuesto=presupuesto)\n        serializer = self.get_serializer(pagos, many=True)\n        \n        total_pagado = pagos.filter(estado='completado').aggregate(\n            total=Sum('monto')\n        )['total'] or Decimal('0')\n        \n        return Response({\n            'presupuesto': {\n                'id': presupuesto.id,\n                'codigo': presupuesto.codigo,\n                'total': presupuesto.total,\n                'estado': presupuesto.estado\n            },\n            'total_pagado': total_pagado,\n            'saldo_pendiente': presupuesto.total - total_pagado,\n            'pagos': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "agregar_item",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "agregar-item",
+    "docstring": "Agregar un nuevo procedimiento/ítem al plan de tratamiento.\n\nEndpoint: POST /api/v1/tratamientos/planes-tratamiento/{id}/agregar-item/\n\nPermisos:\n- Usuario debe ser Administrador u Odontólogo\n- Plan debe estar en estado 'borrador'\n\nBody:\n{\n  \"idservicio\": 2,              // ID del servicio (OBLIGATORIO)\n  \"idpiezadental\": 18,          // Número de pieza dental (opcional, 1-32)\n  \"costofinal\": 180.00,         // Costo del procedimiento (OBLIGATORIO)\n  \"fecha_objetivo\": \"2024-11-15\",  // Fecha planificada (opcional)\n  \"tiempo_estimado\": 45,        // Duración en minutos (opcional)\n  \"estado_item\": \"Pendiente\",   // Estado (siempre Pendiente al crear)\n  \"notas_item\": \"...\",          // Observaciones (opcional)\n  \"orden\": 1                    // Orden de ejecución (opcional)\n}",
+    "response_structure": "Response({\n            'success': True,\n            'mensaje': 'Ítem agregado exitosamente al plan',\n            'item': {\n                'id': procedimiento.id,\n                'servicio_nombre': servicio.nombre,\n                'pieza_dental_nombre': obtener_nombre_pieza(numero_diente),\n                'costofinal': str(procedimiento.costo_estimado),\n                'estado_item': procedimiento.get_estado_display(),\n                'orden': data.get('orden', 0)\n            },\n            'totales': {\n                'subtotal': str(total_plan),\n                'descuento': '0.00',\n                'total': str(total_plan)\n            }\n        }",
+    "source_code": "    @action(detail=True, methods=['post'], url_path='agregar-item')\n    def agregar_item(self, request, pk=None):\n        \"\"\"\n        Agregar un nuevo procedimiento/ítem al plan de tratamiento.\n        \n        Endpoint: POST /api/v1/tratamientos/planes-tratamiento/{id}/agregar-item/\n        \n        Permisos:\n        - Usuario debe ser Administrador u Odontólogo\n        - Plan debe estar en estado 'borrador'\n        \n        Body:\n        {\n          \"idservicio\": 2,              // ID del servicio (OBLIGATORIO)\n          \"idpiezadental\": 18,          // Número de pieza dental (opcional, 1-32)\n          \"costofinal\": 180.00,         // Costo del procedimiento (OBLIGATORIO)\n          \"fecha_objetivo\": \"2024-11-15\",  // Fecha planificada (opcional)\n          \"tiempo_estimado\": 45,        // Duración en minutos (opcional)\n          \"estado_item\": \"Pendiente\",   // Estado (siempre Pendiente al crear)\n          \"notas_item\": \"...\",          // Observaciones (opcional)\n          \"orden\": 1                    // Orden de ejecución (opcional)\n        }\n        \"\"\"\n        from apps.administracion_clinica.models import Servicio\n        \n        from apps.usuarios.models import Usuario\n        from rest_framework.authtoken.models import Token\n        \n        plan = self.get_object()\n        data = request.data\n        \n        # VALIDACIÓN 1: Plan debe estar en estado borrador\n        if plan.estado != 'borrador':\n            return Response(\n                {\n                    'error': 'El plan ya fue aprobado y no puede ser editado',\n                    'detalle': 'Solo los planes en estado \"Borrador\" pueden ser modificados'\n                },\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # VALIDACIÓN 2: Usuario debe tener permisos (admin u odontólogo)\n        # Obtener el Usuario customizado desde el token\n        try:\n            # request.user es el User de Django, necesitamos obtener nuestro Usuario\n            token_key = request.auth.key if request.auth else None\n            if not token_key:\n                return Response(\n                    {'detail': 'No autenticado'},\n                    status=status.HTTP_401_UNAUTHORIZED\n                )\n            \n            token = Token.objects.select_related('user').get(key=token_key)\n            # Obtener el Usuario customizado por email\n            usuario = Usuario.objects.select_related('idtipousuario').get(\n                correoelectronico=token.user.username\n            )\n            \n            # Tipo 1 = Administrador, Tipo 2 = Odontólogo\n            if usuario.idtipousuario.id not in [1, 2]:\n                return Response(\n                    {'detail': 'No tiene permisos para modificar este plan de tratamiento'},\n                    status=status.HTTP_403_FORBIDDEN\n                )\n        except (Token.DoesNotExist, Usuario.DoesNotExist):\n            return Response(\n                {'detail': 'Usuario no válido'},\n                status=status.HTTP_401_UNAUTHORIZED\n            )\n        \n        # VALIDACIÓN 3: idservicio es obligatorio\n        if not data.get('idservicio'):\n            return Response(\n                {'idservicio': ['Este campo es requerido.']},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # VALIDACIÓN 4: costofinal es obligatorio y debe ser > 0\n        costofinal = data.get('costofinal')\n        if not costofinal or float(costofinal) <= 0:\n            return Response(\n                {'costofinal': ['Asegúrese de que este valor sea mayor que 0.']},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # VALIDACIÓN 5: Servicio existe y está activo\n        try:\n            servicio = Servicio.objects.get(id=data['idservicio'], activo=True)\n        except Servicio.DoesNotExist:\n            return Response(\n                {'idservicio': ['Servicio no encontrado o inactivo.']},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # VALIDACIÓN 6: Número de pieza dental válido si se proporciona\n        # El frontend puede enviar:\n        # - codigo (1-32): ID interno del catálogo\n        # - numero FDI (11-48): Nomenclatura internacional como string\n        numero_diente = data.get('idpiezadental')\n        if numero_diente:\n            try:\n                numero_diente_int = int(numero_diente)\n                \n                # Si es código 1-32, convertir a número FDI usando el catálogo\n                if 1 <= numero_diente_int <= 32:\n                    from apps.administracion_clinica.views import PIEZAS_DENTALES_UNIVERSAL\n                    pieza = next((p for p in PIEZAS_DENTALES_UNIVERSAL if p['codigo'] == numero_diente_int), None)\n                    if pieza:\n                        numero_diente = int(pieza['numero'])  # Convertir \"18\" -> 18\n                    else:\n                        return Response(\n                            {'idpiezadental': ['Código de pieza dental no encontrado en el catálogo.']},\n                            status=status.HTTP_400_BAD_REQUEST\n                        )\n                # Si ya es número FDI (11-48), validar que sea correcto\n                else:\n                    numero_diente = numero_diente_int\n                    # Validar sistema FDI (11-18, 21-28, 31-38, 41-48)\n                    valid_ranges = [\n                        range(11, 19), range(21, 29),  # Superior\n                        range(31, 39), range(41, 49)   # Inferior\n                    ]\n                    if not any(numero_diente in r for r in valid_ranges):\n                        return Response(\n                            {'idpiezadental': ['Número de pieza dental inválido según nomenclatura FDI.']},\n                            status=status.HTTP_400_BAD_REQUEST\n                        )\n            except (ValueError, TypeError):\n                return Response(\n                    {'idpiezadental': ['Debe ser un número válido.']},\n                    status=status.HTTP_400_BAD_REQUEST\n                )\n        \n        # Mapear campos del frontend al backend\n        procedimiento_data = {\n            'plan_tratamiento': plan.id,\n            'servicio': data['idservicio'],\n            'odontologo': plan.odontologo.codusuario_id if plan.odontologo else None,\n            'numero_diente': numero_diente,\n            'descripcion': data.get('notas_item', ''),\n            'estado': 'pendiente',\n            'fecha_planificada': data.get('fecha_objetivo'),\n            'duracion_minutos': data.get('tiempo_estimado'),\n            'costo_estimado': costofinal,\n            'notas': data.get('notas_item', '')\n        }\n        \n        # Crear procedimiento\n        serializer = ProcedimientoCrearSerializer(data=procedimiento_data)\n        \n        if not serializer.is_valid():\n            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n        \n        procedimiento = serializer.save()\n        \n        # Función helper para obtener nombre de pieza dental\n        def obtener_nombre_pieza(numero):\n            if not numero:\n                return None\n            piezas = {\n                # Cuadrante 1 (Superior derecho)\n                18: \"Tercer molar superior derecho\", 17: \"Segundo molar superior derecho\",\n                16: \"Primer molar superior derecho\", 15: \"Segundo premolar superior derecho\",\n                14: \"Primer premolar superior derecho\", 13: \"Canino superior derecho\",\n                12: \"Incisivo lateral superior derecho\", 11: \"Incisivo central superior derecho\",\n                # Cuadrante 2 (Superior izquierdo)\n                21: \"Incisivo central superior izquierdo\", 22: \"Incisivo lateral superior izquierdo\",\n                23: \"Canino superior izquierdo\", 24: \"Primer premolar superior izquierdo\",\n                25: \"Segundo premolar superior izquierdo\", 26: \"Primer molar superior izquierdo\",\n                27: \"Segundo molar superior izquierdo\", 28: \"Tercer molar superior izquierdo\",\n                # Cuadrante 3 (Inferior izquierdo)\n                38: \"Tercer molar inferior izquierdo\", 37: \"Segundo molar inferior izquierdo\",\n                36: \"Primer molar inferior izquierdo\", 35: \"Segundo premolar inferior izquierdo\",\n                34: \"Primer premolar inferior izquierdo\", 33: \"Canino inferior izquierdo\",\n                32: \"Incisivo lateral inferior izquierdo\", 31: \"Incisivo central inferior izquierdo\",\n                # Cuadrante 4 (Inferior derecho)\n                41: \"Incisivo central inferior derecho\", 42: \"Incisivo lateral inferior derecho\",\n                43: \"Canino inferior derecho\", 44: \"Primer premolar inferior derecho\",\n                45: \"Segundo premolar inferior derecho\", 46: \"Primer molar inferior derecho\",\n                47: \"Segundo molar inferior derecho\", 48: \"Tercer molar inferior derecho\"\n            }\n            return piezas.get(int(numero), f\"Pieza #{numero}\")\n        \n        # Calcular totales actualizados\n        total_plan = plan.calcular_costo_total()\n        \n        # Respuesta en formato esperado por frontend\n        return Response({\n            'success': True,\n            'mensaje': 'Ítem agregado exitosamente al plan',\n            'item': {\n                'id': procedimiento.id,\n                'servicio_nombre': servicio.nombre,\n                'pieza_dental_nombre': obtener_nombre_pieza(numero_diente),\n                'costofinal': str(procedimiento.costo_estimado),\n                'estado_item': procedimiento.get_estado_display(),\n                'orden': data.get('orden', 0)\n            },\n            'totales': {\n                'subtotal': str(total_plan),\n                'descuento': '0.00',\n                'total': str(total_plan)\n            }\n        }, status=status.HTTP_201_CREATED)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "cambiar_estado",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "cambiar-estado",
+    "docstring": "Cambiar estado del plan de tratamiento",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='cambiar-estado')\n    def cambiar_estado(self, request, pk=None):\n        \"\"\"Cambiar estado del plan de tratamiento\"\"\"\n        plan = self.get_object()\n        nuevo_estado = request.data.get('estado')\n        \n        if nuevo_estado not in dict(PlanTratamiento.ESTADO_CHOICES):\n            return Response(\n                {'error': 'Estado inválido'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        plan.estado = nuevo_estado\n        \n        # Si se aprueba, registrar fecha\n        if nuevo_estado == 'aprobado' and not plan.fecha_aprobacion:\n            plan.fecha_aprobacion = timezone.now()\n        \n        plan.save()\n        serializer = self.get_serializer(plan)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "estadisticas",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "estadisticas",
+    "docstring": "Obtener estadísticas del plan de tratamiento",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['get'], url_path='estadisticas')\n    def estadisticas(self, request, pk=None):\n        \"\"\"Obtener estadísticas del plan de tratamiento\"\"\"\n        plan = self.get_object()\n        \n        estadisticas = {\n            'total_procedimientos': plan.procedimientos.count(),\n            'procedimientos_completados': plan.procedimientos.filter(estado='completado').count(),\n            'procedimientos_pendientes': plan.procedimientos.filter(estado='pendiente').count(),\n            'procedimientos_en_proceso': plan.procedimientos.filter(estado='en_proceso').count(),\n            'costo_total_estimado': plan.calcular_costo_total(),\n            'costo_total_real': plan.procedimientos.filter(\n                costo_real__isnull=False\n            ).aggregate(total=Sum('costo_real'))['total'] or 0,\n            'progreso_porcentaje': plan.obtener_progreso(),\n            'total_presupuestos': plan.presupuestos.count(),\n            'presupuestos_aprobados': plan.presupuestos.filter(estado='aprobado').count(),\n        }\n        \n        return Response(estadisticas)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "por_estado",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-estado",
+    "docstring": "Filtrar planes por estado",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-estado')\n    def por_estado(self, request):\n        \"\"\"Filtrar planes por estado\"\"\"\n        estado = request.query_params.get('estado')\n        if not estado:\n            return Response(\n                {'error': 'Se requiere parámetro estado'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        planes = self.queryset.filter(estado=estado)\n        serializer = self.get_serializer(planes, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "por_paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-paciente",
+    "docstring": "Obtener planes de tratamiento de un paciente específico",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-paciente')\n    def por_paciente(self, request):\n        \"\"\"Obtener planes de tratamiento de un paciente específico\"\"\"\n        paciente_id = request.query_params.get('paciente_id')\n        if not paciente_id:\n            return Response(\n                {'error': 'Se requiere paciente_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Corregido: usar paciente_id directamente (ForeignKey)\n        planes = self.queryset.filter(paciente_id=paciente_id)\n        serializer = self.get_serializer(planes, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "progreso_detallado",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "progreso-detallado",
+    "docstring": "Obtener progreso detallado con información de sesiones\nGET /api/v1/tratamientos/planes-tratamiento/{id}/progreso-detallado/",
+    "response_structure": "Response({\n            'plan_id': plan.id,\n            'codigo_plan': plan.codigo,\n            'total_items': total_items,\n            'items_completados': items_completados,\n            'items_en_proceso': items_en_proceso,\n            'items_pendientes': items_pendientes,\n            'porcentaje_global': round(porcentaje_global, 2),\n            'sesiones_totales': sesiones_totales,\n            'sesiones_realizadas': sesiones_realizadas,\n            'costo_total': float(plan.calcular_costo_total()),\n            'costo_ejecutado': float(costo_ejecutado),\n            'items': items_data\n        }",
+    "source_code": "    @action(detail=True, methods=['get'], url_path='progreso-detallado')\n    def progreso_detallado(self, request, pk=None):\n        \"\"\"\n        Obtener progreso detallado con información de sesiones\n        GET /api/v1/tratamientos/planes-tratamiento/{id}/progreso-detallado/\n        \"\"\"\n        plan = self.get_object()\n        items = plan.procedimientos.all()\n        \n        items_data = []\n        for item in items:\n            sesiones = SesionTratamiento.objects.filter(procedimiento=item)\n            sesiones_completadas = sesiones.filter(estado='completada').count()\n            sesiones_totales = sesiones.count()\n            progreso = (sesiones_completadas / sesiones_totales * 100) if sesiones_totales > 0 else 0\n            \n            items_data.append({\n                'id': item.id,\n                'nombre': item.servicio.nombre if hasattr(item, 'servicio') and item.servicio else 'Sin nombre',\n                'progreso': round(progreso, 2),\n                'estado': item.estado,\n                'sesiones_completadas': sesiones_completadas,\n                'sesiones_totales': sesiones_totales\n            })\n        \n        # Calcular totales\n        total_items = items.count()\n        items_completados = items.filter(estado='completado').count()\n        items_en_proceso = items.filter(estado='en_proceso').count()\n        items_pendientes = items.filter(estado='pendiente').count()\n        \n        # Sesiones totales\n        todas_sesiones = SesionTratamiento.objects.filter(plan_tratamiento=plan)\n        sesiones_totales = todas_sesiones.count()\n        sesiones_realizadas = todas_sesiones.filter(estado='completada').count()\n        \n        porcentaje_global = (items_completados / total_items * 100) if total_items > 0 else 0\n        \n        costo_ejecutado = items.filter(costo_real__isnull=False).aggregate(\n            total=Sum('costo_real'))['total'] or 0\n        \n        return Response({\n            'plan_id': plan.id,\n            'codigo_plan': plan.codigo,\n            'total_items': total_items,\n            'items_completados': items_completados,\n            'items_en_proceso': items_en_proceso,\n            'items_pendientes': items_pendientes,\n            'porcentaje_global': round(porcentaje_global, 2),\n            'sesiones_totales': sesiones_totales,\n            'sesiones_realizadas': sesiones_realizadas,\n            'costo_total': float(plan.calcular_costo_total()),\n            'costo_ejecutado': float(costo_ejecutado),\n            'items': items_data\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PlanTratamientoViewSet",
+    "action_name": "validar_aprobacion",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "validar-aprobacion",
+    "docstring": "Valida si el usuario actual puede aprobar el plan de tratamiento.\nUsado por el frontend para habilitar/deshabilitar botones.",
+    "response_structure": "Response({\n            'puede_aprobar': puede_aprobar,\n            'razones': razones,\n            'estado_actual': plan.estado,\n            'es_odontologo': hasattr(user, 'odontologo'),\n            'odontologo_responsable_id': plan.odontologo.codusuario.codigo if plan.odontologo else None\n        }",
+    "source_code": "    @action(detail=True, methods=['get'], url_path='validar-aprobacion')\n    def validar_aprobacion(self, request, pk=None):\n        \"\"\"\n        Valida si el usuario actual puede aprobar el plan de tratamiento.\n        Usado por el frontend para habilitar/deshabilitar botones.\n        \"\"\"\n        plan = self.get_object()\n        user = request.user\n        \n        # Lógica de permisos\n        puede_aprobar = False\n        razones = []\n        \n        # Solo odontólogos pueden aprobar\n        if not hasattr(user, 'odontologo'):\n            razones.append(\"Solo odontólogos pueden aprobar planes\")\n        else:\n            puede_aprobar = True\n        \n        # No se puede aprobar un plan ya aprobado\n        if plan.estado == 'aprobado':\n            puede_aprobar = False\n            razones.append(\"El plan ya está aprobado\")\n        \n        # No se puede aprobar un plan cancelado\n        if plan.estado == 'cancelado':\n            puede_aprobar = False\n            razones.append(\"El plan está cancelado\")\n        \n        return Response({\n            'puede_aprobar': puede_aprobar,\n            'razones': razones,\n            'estado_actual': plan.estado,\n            'es_odontologo': hasattr(user, 'odontologo'),\n            'odontologo_responsable_id': plan.odontologo.codusuario.codigo if plan.odontologo else None\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PresupuestoViewSet",
+    "action_name": "aprobar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "aprobar",
+    "docstring": "Aprobar un presupuesto.\nCU21: Aprobar presupuesto",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='aprobar')\n    def aprobar(self, request, pk=None):\n        \"\"\"\n        Aprobar un presupuesto.\n        CU21: Aprobar presupuesto\n        \"\"\"\n        presupuesto = self.get_object()\n        \n        if presupuesto.estado != 'pendiente':\n            return Response(\n                {'error': 'Solo se pueden aprobar presupuestos pendientes'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        serializer = AprobarPresupuestoSerializer(data=request.data)\n        if not serializer.is_valid():\n            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n        \n        presupuesto.estado = 'aprobado'\n        presupuesto.fecha_aprobacion = timezone.now()\n        presupuesto.aprobado_por = serializer.validated_data['aprobado_por']\n        if serializer.validated_data.get('notas'):\n            presupuesto.notas = serializer.validated_data['notas']\n        presupuesto.save()\n        \n        # Cambiar estado del plan a aprobado también\n        plan = presupuesto.plan_tratamiento\n        if plan.estado == 'borrador':\n            plan.estado = 'aprobado'\n            plan.fecha_aprobacion = timezone.now()\n            plan.save()\n        \n        return Response(\n            PresupuestoSerializer(presupuesto).data,\n            status=status.HTTP_200_OK\n        )\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PresupuestoViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Obtener presupuestos pendientes de aprobación",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='pendientes')\n    def pendientes(self, request):\n        \"\"\"Obtener presupuestos pendientes de aprobación\"\"\"\n        presupuestos = self.queryset.filter(estado='pendiente')\n        serializer = self.get_serializer(presupuestos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PresupuestoViewSet",
+    "action_name": "planes_disponibles",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "planes-disponibles",
+    "docstring": "Obtener planes de tratamiento disponibles para vincular a presupuestos.\n\nEndpoint: GET /api/v1/presupuestos-digitales/planes-disponibles/\n\nRetorna planes que:\n- Están en estado 'aprobado' o 'borrador'\n- Tienen al menos un procedimiento\n- Opcionalmente filtrados por paciente\n\nQuery params:\n- paciente_id (opcional): Filtrar por paciente específico\n\nRespuesta:\n[\n  {\n    \"id\": 1,\n    \"codigo\": \"PLAN-202411-0001\",\n    \"paciente\": {...},\n    \"descripcion\": \"...\",\n    \"estado\": \"aprobado\",\n    \"costo_total\": \"1500.00\",\n    \"cantidad_items\": 3\n  }\n]",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='planes-disponibles')\n    def planes_disponibles(self, request):\n        \"\"\"\n        Obtener planes de tratamiento disponibles para vincular a presupuestos.\n        \n        Endpoint: GET /api/v1/presupuestos-digitales/planes-disponibles/\n        \n        Retorna planes que:\n        - Están en estado 'aprobado' o 'borrador'\n        - Tienen al menos un procedimiento\n        - Opcionalmente filtrados por paciente\n        \n        Query params:\n        - paciente_id (opcional): Filtrar por paciente específico\n        \n        Respuesta:\n        [\n          {\n            \"id\": 1,\n            \"codigo\": \"PLAN-202411-0001\",\n            \"paciente\": {...},\n            \"descripcion\": \"...\",\n            \"estado\": \"aprobado\",\n            \"costo_total\": \"1500.00\",\n            \"cantidad_items\": 3\n          }\n        ]\n        \"\"\"\n        # Filtrar planes disponibles (aprobados o borradores)\n        planes = PlanTratamiento.objects.filter(\n            estado__in=['aprobado', 'borrador']\n        ).select_related(\n            'paciente__codusuario',  # Corregido: ForeignKey correcta\n            'odontologo__codusuario'\n        ).prefetch_related(\n            'procedimientos'  # Cargar procedimientos para filtrar en Python\n        )\n        \n        # Filtrar por paciente si se especifica\n        paciente_id = request.query_params.get('paciente_id')\n        if paciente_id and paciente_id != 'None':  # Evitar filtro con None/null\n            try:\n                planes = planes.filter(paciente_id=int(paciente_id))\n            except (ValueError, TypeError):\n                pass  # Ignorar valores inválidos\n        \n        # Filtrar planes que tengan al menos un procedimiento (hacer en Python para evitar errores SQL)\n        planes_con_procedimientos = [\n            plan for plan in planes \n            if plan.procedimientos.count() > 0\n        ]\n        \n        # Serializar usando el serializer existente\n        serializer = PlanTratamientoSerializer(planes_con_procedimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PresupuestoViewSet",
+    "action_name": "por_plan",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-plan",
+    "docstring": "Obtener presupuestos de un plan específico",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-plan')\n    def por_plan(self, request):\n        \"\"\"Obtener presupuestos de un plan específico\"\"\"\n        plan_id = request.query_params.get('plan_id')\n        if not plan_id:\n            return Response(\n                {'error': 'Se requiere plan_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        presupuestos = self.queryset.filter(plan_tratamiento_id=plan_id)\n        serializer = self.get_serializer(presupuestos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "PresupuestoViewSet",
+    "action_name": "rechazar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "rechazar",
+    "docstring": "Rechazar un presupuesto.\nCU21: Rechazar presupuesto",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='rechazar')\n    def rechazar(self, request, pk=None):\n        \"\"\"\n        Rechazar un presupuesto.\n        CU21: Rechazar presupuesto\n        \"\"\"\n        presupuesto = self.get_object()\n        \n        if presupuesto.estado != 'pendiente':\n            return Response(\n                {'error': 'Solo se pueden rechazar presupuestos pendientes'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        serializer = RechazarPresupuestoSerializer(data=request.data)\n        if not serializer.is_valid():\n            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n        \n        presupuesto.estado = 'rechazado'\n        presupuesto.motivo_rechazo = serializer.validated_data['motivo_rechazo']\n        presupuesto.save()\n        \n        return Response(\n            PresupuestoSerializer(presupuesto).data,\n            status=status.HTTP_200_OK\n        )\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "ProcedimientoViewSet",
+    "action_name": "completar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "completar",
+    "docstring": "Marcar un procedimiento como completado\nPOST /api/v1/tratamientos/procedimientos/{id}/completar/",
+    "response_structure": "Response({\n            'mensaje': 'Procedimiento marcado como completado exitosamente',\n            'item': {\n                'id': procedimiento.id,\n                'estado': procedimiento.estado,\n                'fecha_completado': procedimiento.fecha_realizado,\n                'observaciones': procedimiento.notas,\n                'costo_real': float(procedimiento.costo_real) if procedimiento.costo_real else None\n            },\n            'plan_actualizado': plan_actualizado\n        }",
+    "source_code": "    @action(detail=True, methods=['post'], url_path='completar')\n    def completar(self, request, pk=None):\n        \"\"\"\n        Marcar un procedimiento como completado\n        POST /api/v1/tratamientos/procedimientos/{id}/completar/\n        \"\"\"\n        procedimiento = self.get_object()\n        \n        if procedimiento.estado == 'completado':\n            return Response(\n                {'error': 'El procedimiento ya está completado'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Actualizar procedimiento\n        procedimiento.estado = 'completado'\n        procedimiento.fecha_realizado = timezone.now()\n        \n        if request.data.get('observaciones'):\n            procedimiento.notas = request.data['observaciones']\n        if request.data.get('costo_real'):\n            procedimiento.costo_real = request.data['costo_real']\n        \n        procedimiento.save()\n        \n        # Verificar si todos los procedimientos del plan están completados\n        plan = procedimiento.plan_tratamiento\n        plan_actualizado = False\n        if plan.procedimientos.exclude(estado='completado').count() == 0:\n            plan.estado = 'completado'\n            plan.fecha_finalizacion = timezone.now().date()\n            plan.save()\n            plan_actualizado = True\n        \n        return Response({\n            'mensaje': 'Procedimiento marcado como completado exitosamente',\n            'item': {\n                'id': procedimiento.id,\n                'estado': procedimiento.estado,\n                'fecha_completado': procedimiento.fecha_realizado,\n                'observaciones': procedimiento.notas,\n                'costo_real': float(procedimiento.costo_real) if procedimiento.costo_real else None\n            },\n            'plan_actualizado': plan_actualizado\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "ProcedimientoViewSet",
+    "action_name": "hoy",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "hoy",
+    "docstring": "Obtener procedimientos planificados para hoy",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='hoy')\n    def hoy(self, request):\n        \"\"\"Obtener procedimientos planificados para hoy\"\"\"\n        hoy = timezone.now().date()\n        procedimientos = self.queryset.filter(\n            fecha_planificada=hoy,\n            estado__in=['pendiente', 'en_proceso']\n        )\n        serializer = self.get_serializer(procedimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "ProcedimientoViewSet",
+    "action_name": "marcar_completado",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "marcar-completado",
+    "docstring": "Marcar un procedimiento como completado.\nCU24: Registrar procedimiento realizado",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='marcar-completado')\n    def marcar_completado(self, request, pk=None):\n        \"\"\"\n        Marcar un procedimiento como completado.\n        CU24: Registrar procedimiento realizado\n        \"\"\"\n        procedimiento = self.get_object()\n        \n        if procedimiento.estado == 'completado':\n            return Response(\n                {'error': 'El procedimiento ya está completado'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Actualizar datos del procedimiento\n        procedimiento.estado = 'completado'\n        procedimiento.fecha_realizado = timezone.now()\n        \n        # Opcional: actualizar costo real y notas\n        if request.data.get('costo_real'):\n            procedimiento.costo_real = request.data['costo_real']\n        if request.data.get('notas'):\n            procedimiento.notas = request.data['notas']\n        if request.data.get('complicaciones'):\n            procedimiento.complicaciones = request.data['complicaciones']\n        if request.data.get('duracion_minutos'):\n            procedimiento.duracion_minutos = request.data['duracion_minutos']\n        \n        procedimiento.save()\n        \n        # Verificar si todos los procedimientos del plan están completados\n        plan = procedimiento.plan_tratamiento\n        if plan.procedimientos.exclude(estado='completado').count() == 0:\n            plan.estado = 'completado'\n            plan.fecha_finalizacion = timezone.now().date()\n            plan.save()\n        \n        return Response(\n            ProcedimientoSerializer(procedimiento).data,\n            status=status.HTTP_200_OK\n        )\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "ProcedimientoViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Obtener procedimientos pendientes",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='pendientes')\n    def pendientes(self, request):\n        \"\"\"Obtener procedimientos pendientes\"\"\"\n        procedimientos = self.queryset.filter(estado='pendiente')\n        serializer = self.get_serializer(procedimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "ProcedimientoViewSet",
+    "action_name": "por_plan",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-plan",
+    "docstring": "Obtener procedimientos de un plan específico",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-plan')\n    def por_plan(self, request):\n        \"\"\"Obtener procedimientos de un plan específico\"\"\"\n        plan_id = request.query_params.get('plan_id')\n        if not plan_id:\n            return Response(\n                {'error': 'Se requiere plan_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        procedimientos = self.queryset.filter(plan_tratamiento_id=plan_id)\n        serializer = self.get_serializer(procedimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "ProcedimientoViewSet",
+    "action_name": "progreso",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "progreso",
+    "docstring": "Obtener progreso de un procedimiento (ítem del plan)\nGET /api/v1/tratamientos/procedimientos/{id}/progreso/",
+    "response_structure": "Response({\n            'item_id': procedimiento.id,\n            'nombre_item': procedimiento.servicio.nombre if hasattr(procedimiento, 'servicio') and procedimiento.servicio else 'Sin nombre',\n            'sesiones_completadas': sesiones_completadas,\n            'sesiones_totales': sesiones_totales,\n            'porcentaje_completado': round(porcentaje, 2),\n            'estado_actual': procedimiento.estado,\n            'ultima_sesion_fecha': ultima_sesion.fecha_inicio if ultima_sesion else None,\n            'proxima_sesion_fecha': proxima_sesion.fecha_programada if proxima_sesion else None\n        }",
+    "source_code": "    @action(detail=True, methods=['get'], url_path='progreso')\n    def progreso(self, request, pk=None):\n        \"\"\"\n        Obtener progreso de un procedimiento (ítem del plan)\n        GET /api/v1/tratamientos/procedimientos/{id}/progreso/\n        \"\"\"\n        procedimiento = self.get_object()\n        \n        # Obtener sesiones relacionadas\n        sesiones = SesionTratamiento.objects.filter(procedimiento=procedimiento)\n        sesiones_completadas = sesiones.filter(estado='completada').count()\n        sesiones_totales = sesiones.count()\n        \n        porcentaje = (sesiones_completadas / sesiones_totales * 100) if sesiones_totales > 0 else 0\n        \n        ultima_sesion = sesiones.filter(estado='completada').order_by('-fecha_inicio').first()\n        proxima_sesion = sesiones.filter(estado='programada').order_by('fecha_programada').first()\n        \n        return Response({\n            'item_id': procedimiento.id,\n            'nombre_item': procedimiento.servicio.nombre if hasattr(procedimiento, 'servicio') and procedimiento.servicio else 'Sin nombre',\n            'sesiones_completadas': sesiones_completadas,\n            'sesiones_totales': sesiones_totales,\n            'porcentaje_completado': round(porcentaje, 2),\n            'estado_actual': procedimiento.estado,\n            'ultima_sesion_fecha': ultima_sesion.fecha_inicio if ultima_sesion else None,\n            'proxima_sesion_fecha': proxima_sesion.fecha_programada if proxima_sesion else None\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "SesionTratamientoViewSet",
+    "action_name": "cancelar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "cancelar",
+    "docstring": "Cancelar una sesión",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='cancelar')\n    def cancelar(self, request, pk=None):\n        \"\"\"Cancelar una sesión\"\"\"\n        sesion = self.get_object()\n        \n        if sesion.estado == 'completada':\n            return Response(\n                {'error': 'No se puede cancelar una sesión completada'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        motivo = request.data.get('motivo', '')\n        sesion.estado = 'cancelada'\n        if motivo:\n            sesion.observaciones = f\"CANCELADA: {motivo}\"\n        sesion.save()\n        \n        serializer = self.get_serializer(sesion)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "SesionTratamientoViewSet",
+    "action_name": "completar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "completar",
+    "docstring": "Completar una sesión",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='completar')\n    def completar(self, request, pk=None):\n        \"\"\"Completar una sesión\"\"\"\n        sesion = self.get_object()\n        \n        if sesion.estado == 'completada':\n            return Response(\n                {'error': 'La sesión ya está completada'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        if sesion.estado == 'cancelada':\n            return Response(\n                {'error': 'No se puede completar una sesión cancelada'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Actualizar con datos del request si existen\n        observaciones = request.data.get('observaciones')\n        recomendaciones = request.data.get('recomendaciones')\n        proxima_sesion = request.data.get('proxima_sesion_programada')\n        \n        if observaciones:\n            sesion.observaciones = observaciones\n        if recomendaciones:\n            sesion.recomendaciones = recomendaciones\n        if proxima_sesion:\n            sesion.proxima_sesion_programada = proxima_sesion\n        \n        # Marcar como completada\n        sesion.marcar_completada()\n        \n        serializer = self.get_serializer(sesion)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "SesionTratamientoViewSet",
+    "action_name": "estadisticas_odontologo",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "estadisticas/odontologo/(?P<odontologo_id>[^/.]+)",
+    "docstring": "Obtener estadísticas de sesiones de un odontólogo\nGET /api/v1/tratamientos/sesiones-tratamiento/estadisticas/odontologo/{id}/",
+    "response_structure": "Response({\n            'odontologo_id': odontologo.codusuario.codigo,\n            'nombre_completo': f\"{odontologo.codusuario.nombre} {odontologo.codusuario.apellido}\",\n            'estadisticas': estadisticas,\n            'por_mes': por_mes\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='estadisticas/odontologo/(?P<odontologo_id>[^/.]+)')\n    def estadisticas_odontologo(self, request, odontologo_id=None):\n        \"\"\"\n        Obtener estadísticas de sesiones de un odontólogo\n        GET /api/v1/tratamientos/sesiones-tratamiento/estadisticas/odontologo/{id}/\n        \"\"\"\n        from apps.profesionales.models import Odontologo\n        from django.db.models import Count, Avg, Sum\n        from datetime import timedelta\n        \n        try:\n            odontologo = Odontologo.objects.get(codusuario_id=odontologo_id)\n        except Odontologo.DoesNotExist:\n            return Response(\n                {'error': 'Odontólogo no encontrado'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n        \n        sesiones = self.queryset.filter(odontologo=odontologo)\n        \n        # Estadísticas generales\n        estadisticas = {\n            'sesiones_totales': sesiones.count(),\n            'sesiones_completadas': sesiones.filter(estado='completada').count(),\n            'sesiones_pendientes': sesiones.filter(estado='programada').count(),\n            'sesiones_canceladas': sesiones.filter(estado='cancelada').count(),\n            'pacientes_atendidos': sesiones.values('plan_tratamiento__paciente').distinct().count(),\n        }\n        \n        # Estadísticas por mes (últimos 6 meses)\n        hoy = timezone.now()\n        hace_6_meses = hoy - timedelta(days=180)\n        \n        sesiones_recientes = sesiones.filter(fecha_programada__gte=hace_6_meses)\n        \n        por_mes = []\n        for i in range(6):\n            mes_inicio = hoy - timedelta(days=30 * (5 - i))\n            mes_fin = hoy - timedelta(days=30 * (4 - i))\n            \n            sesiones_mes = sesiones_recientes.filter(\n                fecha_programada__gte=mes_inicio,\n                fecha_programada__lt=mes_fin\n            )\n            \n            por_mes.append({\n                'mes': mes_inicio.strftime('%B %Y'),\n                'sesiones': sesiones_mes.count(),\n                'pacientes': sesiones_mes.values('plan_tratamiento__paciente').distinct().count()\n            })\n        \n        return Response({\n            'odontologo_id': odontologo.codusuario.codigo,\n            'nombre_completo': f\"{odontologo.codusuario.nombre} {odontologo.codusuario.apellido}\",\n            'estadisticas': estadisticas,\n            'por_mes': por_mes\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "SesionTratamientoViewSet",
+    "action_name": "iniciar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "iniciar",
+    "docstring": "Iniciar una sesión (cambiar estado a 'en_curso')",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='iniciar')\n    def iniciar(self, request, pk=None):\n        \"\"\"Iniciar una sesión (cambiar estado a 'en_curso')\"\"\"\n        sesion = self.get_object()\n        \n        if sesion.estado != 'programada':\n            return Response(\n                {'error': f'La sesión debe estar en estado \"programada\". Estado actual: {sesion.get_estado_display()}'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        sesion.estado = 'en_curso'\n        sesion.fecha_inicio = timezone.now()\n        sesion.save()\n        \n        serializer = self.get_serializer(sesion)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "SesionTratamientoViewSet",
+    "action_name": "por_paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "paciente/(?P<paciente_id>[^/.]+)",
+    "docstring": "Obtener sesiones de un paciente específico\nGET /api/v1/tratamientos/sesiones-tratamiento/paciente/{id}/",
+    "response_structure": "Response({\n            'paciente_id': paciente.codusuario.codigo,\n            'nombre_paciente': f\"{paciente.codusuario.nombre} {paciente.codusuario.apellido}\",\n            'total_sesiones': sesiones.count(),\n            'sesiones': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='paciente/(?P<paciente_id>[^/.]+)')\n    def por_paciente(self, request, paciente_id=None):\n        \"\"\"\n        Obtener sesiones de un paciente específico\n        GET /api/v1/tratamientos/sesiones-tratamiento/paciente/{id}/\n        \"\"\"\n        from apps.usuarios.models import Paciente\n        \n        try:\n            paciente = Paciente.objects.get(codusuario_id=paciente_id)\n        except Paciente.DoesNotExist:\n            return Response(\n                {'error': 'Paciente no encontrado'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n        \n        sesiones = self.queryset.filter(\n            plan_tratamiento__paciente=paciente\n        ).order_by('-fecha_programada')\n        \n        serializer = self.get_serializer(sesiones, many=True)\n        \n        return Response({\n            'paciente_id': paciente.codusuario.codigo,\n            'nombre_paciente': f\"{paciente.codusuario.nombre} {paciente.codusuario.apellido}\",\n            'total_sesiones': sesiones.count(),\n            'sesiones': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.tratamientos",
+    "viewset": "SesionTratamientoViewSet",
+    "action_name": "por_plan",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-plan/(?P<plan_id>[^/.]+)",
+    "docstring": "Obtener todas las sesiones de un plan de tratamiento específico",
+    "response_structure": "Response({\n                'plan_id': plan_id,\n                'count': sesiones.count(),\n                'sesiones': serializer.data\n            }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-plan/(?P<plan_id>[^/.]+)')\n    def por_plan(self, request, plan_id=None):\n        \"\"\"Obtener todas las sesiones de un plan de tratamiento específico\"\"\"\n        try:\n            sesiones = self.queryset.filter(plan_tratamiento_id=plan_id).order_by('numero_sesion')\n            serializer = self.get_serializer(sesiones, many=True)\n            return Response({\n                'plan_id': plan_id,\n                'count': sesiones.count(),\n                'sesiones': serializer.data\n            })\n        except Exception as e:\n            return Response(\n                {'error': str(e)},\n                status=status.HTTP_500_INTERNAL_SERVER_ERROR\n            )\n"
+  },
+  {
+    "app": "apps.profesionales",
+    "viewset": "OdontologoViewSet",
+    "action_name": "disponibilidad",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "disponibilidad",
+    "docstring": "Verificar disponibilidad del odontólogo para una fecha específica.\nQuery params: fecha (YYYY-MM-DD)",
+    "response_structure": "Response({'error': 'Parámetro \"fecha\" requerido'}",
+    "source_code": "    @action(detail=True, methods=['get'])\n    def disponibilidad(self, request, codusuario=None):\n        \"\"\"\n        Verificar disponibilidad del odontólogo para una fecha específica.\n        Query params: fecha (YYYY-MM-DD)\n        \"\"\"\n        from datetime import datetime, timedelta\n        from apps.citas.models import Consulta\n        \n        odontologo = self.get_object()\n        fecha_str = request.query_params.get('fecha')\n        \n        if not fecha_str:\n            return Response({'error': 'Parámetro \"fecha\" requerido'}, status=status.HTTP_400_BAD_REQUEST)\n        \n        try:\n            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()\n        except ValueError:\n            return Response({'error': 'Formato de fecha inválido (YYYY-MM-DD)'}, status=status.HTTP_400_BAD_REQUEST)\n        \n        # Obtener citas del día - Corregido: usar campos correctos del modelo Consulta\n        citas = Consulta.objects.filter(\n            cododontologo=odontologo,\n            fecha=fecha\n        ).values('hora_inicio_consulta', 'hora_fin_consulta')  # Corregido: nombres de campos\n        \n        # Obtener horario del día\n        dia_semana = fecha.strftime('%A').lower()  # monday, tuesday, etc\n        dias_map = {\n            'monday': 'Lunes',\n            'tuesday': 'Martes',\n            'wednesday': 'Miércoles',\n            'thursday': 'Jueves',\n            'friday': 'Viernes',\n            'saturday': 'Sábado',\n            'sunday': 'Domingo'\n        }\n        dia_espanol = dias_map.get(dia_semana)\n        \n        # NOTA: El modelo Horario actual no tiene relación con odontólogos\n        # Usamos horario por defecto: lunes a viernes 8am-5pm\n        dias_laborales = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']\n        \n        if dia_espanol not in dias_laborales:\n            return Response({\n                'disponible': False,\n                'mensaje': f'El odontólogo no trabaja los {dia_espanol}'\n            })\n        \n        return Response({\n            'disponible': True,\n            'fecha': fecha_str,\n            'dia': dia_espanol,\n            'horario_trabajo': {\n                'inicio': '08:00:00',\n                'fin': '17:00:00'\n            },\n            'citas_ocupadas': list(citas),\n            'total_citas': citas.count()\n        })\n"
+  },
+  {
+    "app": "apps.profesionales",
+    "viewset": "OdontologoViewSet",
+    "action_name": "horarios",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "horarios",
+    "docstring": "Obtener horarios del odontólogo.",
+    "response_structure": "Response({\n            'odontologo_id': odontologo.codusuario.codigo,\n            'horarios': horarios_default\n        }",
+    "source_code": "    @action(detail=True, methods=['get'])\n    def horarios(self, request, codusuario=None):\n        \"\"\"Obtener horarios del odontólogo.\"\"\"\n        # NOTA: El modelo Horario actual solo tiene 'hora' e 'id', no tiene relación con odontólogos\n        # Retornamos horarios genéricos de trabajo (lunes a viernes 8am-5pm)\n        odontologo = self.get_object()\n        \n        horarios_default = [\n            {'dia': 'Lunes', 'horainicio': '08:00', 'horafin': '17:00'},\n            {'dia': 'Martes', 'horainicio': '08:00', 'horafin': '17:00'},\n            {'dia': 'Miércoles', 'horainicio': '08:00', 'horafin': '17:00'},\n            {'dia': 'Jueves', 'horainicio': '08:00', 'horafin': '17:00'},\n            {'dia': 'Viernes', 'horainicio': '08:00', 'horafin': '17:00'},\n        ]\n        \n        return Response({\n            'odontologo_id': odontologo.codusuario.codigo,\n            'horarios': horarios_default\n        })\n"
+  },
+  {
+    "app": "apps.profesionales",
+    "viewset": "ProfesionalViewSet",
+    "action_name": "especialidades",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "especialidades",
+    "docstring": "Listar especialidades únicas de odontólogos.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def especialidades(self, request):\n        \"\"\"Listar especialidades únicas de odontólogos.\"\"\"\n        especialidades = self.queryset.values_list('especialidad', flat=True).distinct()\n        especialidades_list = [{'nombre': esp} for esp in especialidades if esp]\n        return Response(especialidades_list)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "actualizar_estado",
+    "methods": [
+      "patch"
+    ],
+    "detail": true,
+    "url_path": "actualizar_estado",
+    "docstring": "Actualizar estado de una consulta.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['patch'])\n    def actualizar_estado(self, request, pk=None):\n        \"\"\"\n        Actualizar estado de una consulta.\n        \"\"\"\n        consulta = self.get_object()\n        serializer = ConsultaActualizarEstadoSerializer(\n            consulta, data=request.data, partial=True\n        )\n        \n        if serializer.is_valid():\n            serializer.save()\n            return Response(serializer.data)\n        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "agregar_diagnostico",
+    "methods": [
+      "patch"
+    ],
+    "detail": true,
+    "url_path": "agregar_diagnostico",
+    "docstring": "Agregar diagnóstico y tratamiento (solo odontólogos).",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, EsOdontologo])\n    def agregar_diagnostico(self, request, pk=None):\n        \"\"\"\n        Agregar diagnóstico y tratamiento (solo odontólogos).\n        \"\"\"\n        consulta = self.get_object()\n        serializer = ConsultaDiagnosticoSerializer(\n            consulta, data=request.data, partial=True\n        )\n        \n        if serializer.is_valid():\n            serializer.save()\n            # Actualizar estado a \"diagnosticada\"\n            consulta.estado = 'diagnosticada'\n            consulta.save()\n            return Response(serializer.data)\n        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "cancelar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "cancelar",
+    "docstring": "Cancelar una consulta.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'])\n    def cancelar(self, request, pk=None):\n        \"\"\"\n        Cancelar una consulta.\n        \"\"\"\n        consulta = self.get_object()\n        motivo = request.data.get('motivo_cancelacion')\n        \n        if not motivo:\n            return Response(\n                {'error': 'Debe proporcionar un motivo de cancelación'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        consulta.estado = 'cancelada'\n        estado_cancelada = Estadodeconsulta.objects.get(estado='Cancelada')\n        consulta.idestadoconsulta = estado_cancelada\n        consulta.motivo_cancelacion = motivo\n        consulta.save()\n        \n        serializer = self.get_serializer(consulta)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "confirmar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "confirmar",
+    "docstring": "Confirmar una consulta pendiente.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'])\n    def confirmar(self, request, pk=None):\n        \"\"\"\n        Confirmar una consulta pendiente.\n        \"\"\"\n        consulta = self.get_object()\n        \n        if consulta.estado != 'pendiente':\n            return Response(\n                {'error': 'Solo se pueden confirmar consultas pendientes'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        consulta.estado = 'confirmada'\n        estado_confirmada = Estadodeconsulta.objects.get(estado='Confirmada')\n        consulta.idestadoconsulta = estado_confirmada\n        consulta.save()\n        \n        serializer = self.get_serializer(consulta)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "disponibilidad",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "disponibilidad",
+    "docstring": "Verificar disponibilidad de horarios para una fecha y odontólogo.\nQuery params: fecha (YYYY-MM-DD), odontologo_id (opcional)",
+    "response_structure": "Response({\n            'fecha': fecha,\n            'odontologo_id': odontologo_id,\n            'horarios_disponibles': HorarioSerializer(horarios_disponibles, many=True).data,\n            'horarios_ocupados': list(consultas_ocupadas)\n        }",
+    "source_code": "    @action(detail=False, methods=['get'])\n    def disponibilidad(self, request):\n        \"\"\"\n        Verificar disponibilidad de horarios para una fecha y odontólogo.\n        Query params: fecha (YYYY-MM-DD), odontologo_id (opcional)\n        \"\"\"\n        fecha = request.query_params.get('fecha')\n        odontologo_id = request.query_params.get('odontologo_id')\n        \n        if not fecha:\n            return Response(\n                {'error': 'Debe proporcionar el parámetro fecha'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Obtener horarios ocupados\n        filtros = {'fecha': fecha}\n        if odontologo_id:\n            filtros['cododontologo_id'] = odontologo_id\n        \n        consultas_ocupadas = self.get_queryset().filter(**filtros).values_list('idhorario_id', flat=True)\n        \n        # Obtener horarios disponibles\n        horarios_disponibles = Horario.objects.exclude(id__in=consultas_ocupadas)\n        \n        return Response({\n            'fecha': fecha,\n            'odontologo_id': odontologo_id,\n            'horarios_disponibles': HorarioSerializer(horarios_disponibles, many=True).data,\n            'horarios_ocupados': list(consultas_ocupadas)\n        })\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "hoy",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "hoy",
+    "docstring": "Obtener consultas de hoy.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def hoy(self, request):\n        \"\"\"\n        Obtener consultas de hoy.\n        \"\"\"\n        fecha_hoy = datetime.now().date()\n        consultas = self.get_queryset().filter(fecha=fecha_hoy)\n        serializer = self.get_serializer(consultas, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "marcar_noshow",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "marcar-noshow",
+    "docstring": "Marcar una consulta como No-Show (paciente no asistió).\nCU18: No-Show Automation\n\nAutomáticamente bloquea al paciente si acumula 3 o más faltas.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'], url_path='marcar-noshow')\n    def marcar_noshow(self, request, pk=None):\n        \"\"\"\n        Marcar una consulta como No-Show (paciente no asistió).\n        CU18: No-Show Automation\n        \n        Automáticamente bloquea al paciente si acumula 3 o más faltas.\n        \"\"\"\n        consulta = self.get_object()\n        \n        # Verificar que la consulta esté en un estado válido para marcar no-show\n        if consulta.estado in ['cancelada', 'completada']:\n            return Response(\n                {'error': f'No se puede marcar como no-show una consulta {consulta.estado}'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Obtener o crear estado no_show\n        try:\n            estado_noshow = Estadodeconsulta.objects.get(estado__iexact='no_show')\n        except Estadodeconsulta.DoesNotExist:\n            # Si no existe, crear el estado\n            estado_noshow = Estadodeconsulta.objects.create(\n                estado='no_show',\n                descripcion='Paciente no asistió a la cita'\n            )\n        \n        # Marcar como no-show\n        consulta.estado = 'no_show'\n        consulta.idestadoconsulta = estado_noshow\n        consulta.save()\n        \n        # Contar faltas del paciente\n        paciente = consulta.codpaciente\n        total_noshows = Consulta.objects.filter(\n            codpaciente=paciente,\n            estado='no_show'\n        ).count()\n        \n        # Auto-bloqueo si tiene 3 o más faltas\n        mensaje_bloqueo = None\n        if total_noshows >= 3:\n            from apps.autenticacion.models import BloqueoUsuario\n            from django.utils import timezone\n            \n            # Verificar si ya está bloqueado\n            usuario = paciente.codusuario\n            bloqueo_existente = BloqueoUsuario.objects.filter(\n                usuario=usuario,\n                activo=True\n            ).first()\n            \n            if not bloqueo_existente:\n                # Crear bloqueo automático\n                BloqueoUsuario.objects.create(\n                    usuario=usuario,\n                    motivo=f'Bloqueo automático: {total_noshows} faltas (no-show) registradas',\n                    fecha_bloqueo=timezone.now(),\n                    bloqueado_por=request.user,\n                    activo=True\n                )\n                mensaje_bloqueo = f'⚠️ PACIENTE BLOQUEADO: Acumuló {total_noshows} faltas'\n        \n        # Respuesta\n        response_data = {\n            **ConsultaSerializer(consulta).data,\n            'total_noshows': total_noshows,\n            'mensaje': f'Consulta marcada como no-show. Total faltas del paciente: {total_noshows}'\n        }\n        \n        if mensaje_bloqueo:\n            response_data['alerta_bloqueo'] = mensaje_bloqueo\n        \n        return Response(response_data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "mis_consultas",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "mis_consultas",
+    "docstring": "Obtener consultas del paciente autenticado.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def mis_consultas(self, request):\n        \"\"\"\n        Obtener consultas del paciente autenticado.\n        \"\"\"\n        try:\n            from apps.usuarios.models import Paciente\n            paciente = Paciente.objects.get(codusuario=request.user)\n            consultas = self.get_queryset().filter(codpaciente=paciente)\n            \n            page = self.paginate_queryset(consultas)\n            if page is not None:\n                serializer = self.get_serializer(page, many=True)\n                return self.get_paginated_response(serializer.data)\n            \n            serializer = self.get_serializer(consultas, many=True)\n            return Response(serializer.data)\n        except:\n            return Response(\n                {'error': 'El usuario no es un paciente'},\n                status=status.HTTP_404_NOT_FOUND\n            )\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Obtener consultas pendientes de confirmación.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def pendientes(self, request):\n        \"\"\"\n        Obtener consultas pendientes de confirmación.\n        \"\"\"\n        consultas = self.get_queryset().filter(estado='pendiente')\n        serializer = self.get_serializer(consultas, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "ConsultaViewSet",
+    "action_name": "por_fecha",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por-fecha",
+    "docstring": "Obtener consultas por fecha específica.\nQuery params: fecha (YYYY-MM-DD)",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='por-fecha')\n    def por_fecha(self, request):\n        \"\"\"\n        Obtener consultas por fecha específica.\n        Query params: fecha (YYYY-MM-DD)\n        \"\"\"\n        fecha = request.query_params.get('fecha')\n        if not fecha:\n            return Response(\n                {'error': 'Debe proporcionar el parámetro fecha'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        consultas = self.get_queryset().filter(fecha=fecha)\n        serializer = self.get_serializer(consultas, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "HorarioViewSet",
+    "action_name": "disponibles",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "disponibles",
+    "docstring": "Obtener horarios disponibles para una fecha.\nQuery params: fecha (YYYY-MM-DD)",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def disponibles(self, request):\n        \"\"\"\n        Obtener horarios disponibles para una fecha.\n        Query params: fecha (YYYY-MM-DD)\n        \"\"\"\n        fecha = request.query_params.get('fecha')\n        if not fecha:\n            return Response(\n                {'error': 'Debe proporcionar una fecha'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # TODO: Implementar lógica para verificar horarios ocupados\n        horarios = Horario.objects.all()\n        serializer = self.get_serializer(horarios, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.citas",
+    "viewset": "TipodeconsultaViewSet",
+    "action_name": "agendamiento_web",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "agendamiento_web",
+    "docstring": "Obtener tipos de consulta disponibles para agendamiento web.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def agendamiento_web(self, request):\n        \"\"\"\n        Obtener tipos de consulta disponibles para agendamiento web.\n        \"\"\"\n        tipos = Tipodeconsulta.objects.filter(permite_agendamiento_web=True)\n        serializer = self.get_serializer(tipos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "ConsentimientoInformadoViewSet",
+    "action_name": "firmar",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "firmar",
+    "docstring": "Firmar un consentimiento informado.\nCU13: Firmar consentimiento",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'])\n    def firmar(self, request, pk=None):\n        \"\"\"\n        Firmar un consentimiento informado.\n        CU13: Firmar consentimiento\n        \"\"\"\n        consentimiento = self.get_object()\n        \n        # Validar estado\n        if consentimiento.estado != 'pendiente':\n            return Response(\n                {'error': f'No se puede firmar un consentimiento {consentimiento.estado}'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        # Validar datos\n        serializer = serializers.FirmarConsentimientoSerializer(data=request.data)\n        if not serializer.is_valid():\n            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n        \n        # Actualizar consentimiento\n        from django.utils import timezone\n        consentimiento.firma_paciente_url = serializer.validated_data['firma_paciente_url']\n        consentimiento.estado = 'firmado'\n        consentimiento.fecha_firma = timezone.now()\n        \n        # Datos opcionales del tutor\n        if serializer.validated_data.get('firma_tutor_url'):\n            consentimiento.firma_tutor_url = serializer.validated_data['firma_tutor_url']\n        if serializer.validated_data.get('nombre_tutor'):\n            consentimiento.nombre_tutor = serializer.validated_data['nombre_tutor']\n        if serializer.validated_data.get('documento_tutor'):\n            consentimiento.documento_tutor = serializer.validated_data['documento_tutor']\n        \n        # Capturar IP\n        if serializer.validated_data.get('ip_firma'):\n            consentimiento.ip_firma = serializer.validated_data['ip_firma']\n        else:\n            # Intentar obtener IP del request\n            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')\n            if x_forwarded_for:\n                consentimiento.ip_firma = x_forwarded_for.split(',')[0]\n            else:\n                consentimiento.ip_firma = request.META.get('REMOTE_ADDR')\n        \n        consentimiento.save()\n        \n        return Response(\n            serializers.ConsentimientoInformadoSerializer(consentimiento).data,\n            status=status.HTTP_200_OK\n        )\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "ConsentimientoInformadoViewSet",
+    "action_name": "pdf",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "pdf",
+    "docstring": "Generar y descargar PDF del consentimiento informado.\n\nEndpoint: GET /api/v1/historial-clinico/consentimientos/{id}/pdf/",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['get'], url_path='pdf')\n    def pdf(self, request, pk=None):\n        \"\"\"\n        Generar y descargar PDF del consentimiento informado.\n        \n        Endpoint: GET /api/v1/historial-clinico/consentimientos/{id}/pdf/\n        \"\"\"\n        from reportlab.lib.pagesizes import letter, A4\n        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle\n        from reportlab.lib.units import inch\n        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle\n        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY\n        from reportlab.lib import colors\n        from io import BytesIO\n        \n        consentimiento = self.get_object()\n        \n        # Crear buffer para el PDF\n        buffer = BytesIO()\n        \n        # Crear documento\n        doc = SimpleDocTemplate(\n            buffer,\n            pagesize=A4,\n            rightMargin=72,\n            leftMargin=72,\n            topMargin=72,\n            bottomMargin=18,\n        )\n        \n        # Contenedor para elementos del PDF\n        elements = []\n        \n        # Estilos\n        styles = getSampleStyleSheet()\n        style_title = ParagraphStyle(\n            'CustomTitle',\n            parent=styles['Heading1'],\n            fontSize=18,\n            textColor=colors.HexColor('#1e40af'),\n            spaceAfter=30,\n            alignment=TA_CENTER,\n            fontName='Helvetica-Bold'\n        )\n        style_heading = ParagraphStyle(\n            'CustomHeading',\n            parent=styles['Heading2'],\n            fontSize=14,\n            textColor=colors.HexColor('#1e40af'),\n            spaceAfter=12,\n            spaceBefore=12,\n            fontName='Helvetica-Bold'\n        )\n        style_normal = ParagraphStyle(\n            'CustomNormal',\n            parent=styles['Normal'],\n            fontSize=11,\n            alignment=TA_JUSTIFY,\n            spaceAfter=12\n        )\n        \n        # Título\n        elements.append(Paragraph(\"CONSENTIMIENTO INFORMADO\", style_title))\n        elements.append(Spacer(1, 0.2*inch))\n        \n        # Información del paciente\n        elements.append(Paragraph(\"INFORMACIÓN DEL PACIENTE\", style_heading))\n        \n        paciente_nombre = \"N/A\"\n        if consentimiento.paciente and consentimiento.paciente.codusuario:\n            paciente_nombre = f\"{consentimiento.paciente.codusuario.nombre} {consentimiento.paciente.codusuario.apellido}\"\n        \n        odontologo_nombre = \"N/A\"\n        if consentimiento.odontologo and consentimiento.odontologo.codusuario:\n            odontologo_nombre = f\"{consentimiento.odontologo.codusuario.nombre} {consentimiento.odontologo.codusuario.apellido}\"\n        \n        data_paciente = [\n            ['Paciente:', paciente_nombre],\n            ['Odontólogo:', odontologo_nombre],\n            ['Tratamiento:', consentimiento.tipo_tratamiento or 'N/A'],\n            ['Fecha:', consentimiento.fecha_creacion.strftime('%d/%m/%Y')],\n            ['Estado:', consentimiento.estado.upper()],\n        ]\n        \n        if consentimiento.fecha_firma:\n            data_paciente.append(['Fecha Firma:', consentimiento.fecha_firma.strftime('%d/%m/%Y %H:%M')])\n        \n        table = Table(data_paciente, colWidths=[2*inch, 4*inch])\n        table.setStyle(TableStyle([\n            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),\n            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),\n            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),\n            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),\n            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),\n            ('FONTSIZE', (0, 0), (-1, -1), 10),\n            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),\n            ('TOPPADDING', (0, 0), (-1, -1), 8),\n            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),\n        ]))\n        elements.append(table)\n        elements.append(Spacer(1, 0.3*inch))\n        \n        # Contenido del consentimiento\n        elements.append(Paragraph(\"CONTENIDO DEL CONSENTIMIENTO\", style_heading))\n        contenido_texto = consentimiento.contenido_documento or \"No se ha proporcionado contenido.\"\n        elements.append(Paragraph(contenido_texto, style_normal))\n        elements.append(Spacer(1, 0.3*inch))\n        \n        # Riesgos\n        if consentimiento.riesgos:\n            elements.append(Paragraph(\"RIESGOS ASOCIADOS\", style_heading))\n            elements.append(Paragraph(consentimiento.riesgos, style_normal))\n            elements.append(Spacer(1, 0.2*inch))\n        \n        # Beneficios\n        if consentimiento.beneficios:\n            elements.append(Paragraph(\"BENEFICIOS ESPERADOS\", style_heading))\n            elements.append(Paragraph(consentimiento.beneficios, style_normal))\n            elements.append(Spacer(1, 0.2*inch))\n        \n        # Alternativas\n        if consentimiento.alternativas:\n            elements.append(Paragraph(\"ALTERNATIVAS DE TRATAMIENTO\", style_heading))\n            elements.append(Paragraph(consentimiento.alternativas, style_normal))\n            elements.append(Spacer(1, 0.3*inch))\n        \n        # Información de firma (si está firmado)\n        if consentimiento.estado == 'firmado':\n            elements.append(Paragraph(\"INFORMACIÓN DE FIRMA\", style_heading))\n            \n            data_firma = [\n                ['Firmado el:', consentimiento.fecha_firma.strftime('%d/%m/%Y %H:%M:%S') if consentimiento.fecha_firma else 'N/A'],\n            ]\n            \n            if consentimiento.ip_firma:\n                data_firma.append(['IP:', consentimiento.ip_firma])\n            \n            if consentimiento.nombre_tutor:\n                data_firma.append(['Tutor Legal:', consentimiento.nombre_tutor])\n                if consentimiento.documento_tutor:\n                    data_firma.append(['Documento Tutor:', consentimiento.documento_tutor])\n            \n            table_firma = Table(data_firma, colWidths=[2*inch, 4*inch])\n            table_firma.setStyle(TableStyle([\n                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),\n                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),\n                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),\n                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),\n                ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),\n                ('FONTSIZE', (0, 0), (-1, -1), 10),\n                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),\n                ('TOPPADDING', (0, 0), (-1, -1), 8),\n                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),\n            ]))\n            elements.append(table_firma)\n        \n        # Construir PDF\n        doc.build(elements)\n        \n        # Obtener PDF del buffer\n        pdf = buffer.getvalue()\n        buffer.close()\n        \n        # Crear respuesta HTTP\n        response = HttpResponse(pdf, content_type='application/pdf')\n        filename = f\"consentimiento_{consentimiento.id}_{paciente_nombre.replace(' ', '_')}.pdf\"\n        response['Content-Disposition'] = f'attachment; filename=\"{filename}\"'\n        \n        return response\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "ConsentimientoInformadoViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Obtener consentimientos pendientes de firma.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def pendientes(self, request):\n        \"\"\"Obtener consentimientos pendientes de firma.\"\"\"\n        consentimientos = self.queryset.filter(estado='pendiente')\n        serializer = self.get_serializer(consentimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "ConsentimientoInformadoViewSet",
+    "action_name": "por_paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_paciente",
+    "docstring": "Obtener consentimientos de un paciente específico.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_paciente(self, request):\n        \"\"\"Obtener consentimientos de un paciente específico.\"\"\"\n        paciente_id = request.query_params.get('paciente_id')\n        \n        if not paciente_id:\n            return Response(\n                {'error': 'Debe proporcionar paciente_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        consentimientos = self.queryset.filter(paciente__codusuario=paciente_id)\n        serializer = self.get_serializer(consentimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "ConsentimientoInformadoViewSet",
+    "action_name": "vigentes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "vigentes",
+    "docstring": "Obtener solo consentimientos vigentes.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def vigentes(self, request):\n        \"\"\"Obtener solo consentimientos vigentes.\"\"\"\n        from django.utils import timezone\n        from django.db.models import Q\n        hoy = timezone.now().date()\n        \n        consentimientos = self.queryset.filter(\n            estado='firmado'\n        ).filter(\n            Q(fecha_vencimiento__isnull=True) | \n            Q(fecha_vencimiento__gte=hoy)\n        )\n        \n        serializer = self.get_serializer(consentimientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "DocumentoClinicoViewSet",
+    "action_name": "download_url",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "download_url",
+    "docstring": "Obtener la URL de descarga de un documento.\n\nEndpoint: GET /api/v1/historia-clinica/documentos/{id}/download_url/",
+    "response_structure": "Response({\n            'id': documento.id,\n            'titulo': documento.titulo,\n            'archivo_url': download_url,  # URL completa\n            'download_url': download_url,  # Campo que espera el frontend\n            'tipo_documento': documento.tipo_documento,\n            'fecha_subida': documento.fecha_subida\n        }",
+    "source_code": "    @action(detail=True, methods=['get'], url_path='download_url')\n    def download_url(self, request, pk=None):\n        \"\"\"\n        Obtener la URL de descarga de un documento.\n        \n        Endpoint: GET /api/v1/historia-clinica/documentos/{id}/download_url/\n        \"\"\"\n        documento = self.get_object()\n        \n        # Construir URL absoluta para el archivo\n        if documento.archivo_url:\n            # Si la URL ya es absoluta (http/https), usarla tal cual\n            if documento.archivo_url.startswith(('http://', 'https://')):\n                download_url = documento.archivo_url\n            else:\n                # Construir URL absoluta desde la URL relativa\n                download_url = request.build_absolute_uri(documento.archivo_url)\n        else:\n            download_url = None\n        \n        return Response({\n            'id': documento.id,\n            'titulo': documento.titulo,\n            'archivo_url': download_url,  # URL completa\n            'download_url': download_url,  # Campo que espera el frontend\n            'tipo_documento': documento.tipo_documento,\n            'fecha_subida': documento.fecha_subida\n        })\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "DocumentoClinicoViewSet",
+    "action_name": "por_paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_paciente",
+    "docstring": "Listar documentos de un paciente.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_paciente(self, request):\n        \"\"\"Listar documentos de un paciente.\"\"\"\n        paciente_id = request.query_params.get('paciente_id')\n        \n        if not paciente_id:\n            return Response(\n                {'error': 'Debe proporcionar paciente_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        documentos = self.queryset.filter(historial__pacientecodigo_id=paciente_id)\n        serializer = self.get_serializer(documentos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "DocumentoClinicoViewSet",
+    "action_name": "por_tipo",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_tipo",
+    "docstring": "Filtrar documentos por tipo.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_tipo(self, request):\n        \"\"\"Filtrar documentos por tipo.\"\"\"\n        tipo = request.query_params.get('tipo')\n        \n        if not tipo:\n            return Response(\n                {'error': 'Debe proporcionar el parÃ¡metro tipo'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        documentos = self.queryset.filter(tipo_documento__icontains=tipo)\n        serializer = self.get_serializer(documentos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "HistorialclinicoViewSet",
+    "action_name": "documentos",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "documentos",
+    "docstring": "Listar documentos asociados a un historial.",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['get'])\n    def documentos(self, request, pk=None):\n        \"\"\"Listar documentos asociados a un historial.\"\"\"\n        historial = self.get_object()\n        documentos = DocumentoClinico.objects.filter(historial=historial)\n        \n        serializer = DocumentoClinicoSerializer(documentos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "HistorialclinicoViewSet",
+    "action_name": "odontograma",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "odontograma/(?P<paciente_id>[^/.]+)",
+    "docstring": "Obtener odontograma de un paciente.",
+    "response_structure": "Response({'error': 'Odontograma no encontrado'}",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='odontograma/(?P<paciente_id>[^/.]+)')\n    def odontograma(self, request, paciente_id=None):\n        \"\"\"Obtener odontograma de un paciente.\"\"\"\n        # Corregido: usar modelo del mismo archivo models.py (no importar models_odontograma)\n        from .models import Odontograma\n        try:\n            odontograma = Odontograma.objects.filter(paciente_id=paciente_id).first()\n            if not odontograma:\n                return Response({'error': 'Odontograma no encontrado'}, status=status.HTTP_404_NOT_FOUND)\n            # Aquí retornar datos del odontograma (simplificado)\n            return Response({'paciente_id': paciente_id, 'odontograma': 'datos del odontograma'})\n        except Exception as e:\n            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "HistorialclinicoViewSet",
+    "action_name": "paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "paciente/(?P<paciente_id>[^/.]+)",
+    "docstring": "Obtener historial completo de un paciente por ID.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='paciente/(?P<paciente_id>[^/.]+)')\n    def paciente(self, request, paciente_id=None):\n        \"\"\"Obtener historial completo de un paciente por ID.\"\"\"\n        historiales = self.queryset.filter(pacientecodigo_id=paciente_id).order_by('-fecha')  # Corregido: pacientecodigo_id\n        page = self.paginate_queryset(historiales)\n        if page is not None:\n            serializer = self.get_serializer(page, many=True)\n            return self.get_paginated_response(serializer.data)\n        serializer = self.get_serializer(historiales, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "HistorialclinicoViewSet",
+    "action_name": "por_paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_paciente",
+    "docstring": "Listar historial de un paciente específico.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_paciente(self, request):\n        \"\"\"Listar historial de un paciente específico.\"\"\"\n        paciente_id = request.query_params.get('paciente_id')\n        \n        if not paciente_id:\n            return Response(\n                {'error': 'Debe proporcionar paciente_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        historiales = self.queryset.filter(pacientecodigo_id=paciente_id)\n        serializer = self.get_serializer(historiales, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "HistorialclinicoViewSet",
+    "action_name": "ultimos",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "ultimos",
+    "docstring": "Obtener últimos registros de historial clínico.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def ultimos(self, request):\n        \"\"\"Obtener últimos registros de historial clínico.\"\"\"\n        limit = int(request.query_params.get('limit', 10))\n        historiales = self.queryset.order_by('-fecha')[:limit]  # Corregido: usar -fecha en lugar de -created_at\n        serializer = self.get_serializer(historiales, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "OdontogramaViewSet",
+    "action_name": "actualizar_diente",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "actualizar_diente",
+    "docstring": "Actualizar el estado de un diente especÃ­fico.",
+    "response_structure": "Response({\n                'mensaje': f'Diente #{numero_diente} actualizado correctamente',\n                'diente': odontograma.dientes.get(str(numero_diente))\n            }",
+    "source_code": "    @action(detail=True, methods=['post'])\n    def actualizar_diente(self, request, pk=None):\n        \"\"\"Actualizar el estado de un diente especÃ­fico.\"\"\"\n        odontograma = self.get_object()\n        serializer = self.get_serializer(data=request.data)\n        \n        if serializer.is_valid():\n            numero_diente = serializer.validated_data['numero_diente']\n            estado = serializer.validated_data['estado']\n            caras = serializer.validated_data.get('caras_afectadas', [])\n            observaciones = serializer.validated_data.get('observaciones', '')\n            \n            odontograma.actualizar_diente(numero_diente, estado, caras, observaciones)\n            \n            return Response({\n                'mensaje': f'Diente #{numero_diente} actualizado correctamente',\n                'diente': odontograma.dientes.get(str(numero_diente))\n            })\n        \n        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "OdontogramaViewSet",
+    "action_name": "estadisticas",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "estadisticas",
+    "docstring": "Obtener estadÃ­sticas del estado dental.",
+    "response_structure": "Response({\n            'paciente': paciente_nombre,\n            'fecha_actualizacion': odontograma.fecha_actualizacion,\n            'estadisticas': stats,\n            'total_dientes': sum(stats.values())\n        }",
+    "source_code": "    @action(detail=True, methods=['get'])\n    def estadisticas(self, request, pk=None):\n        \"\"\"Obtener estadÃ­sticas del estado dental.\"\"\"\n        odontograma = self.get_object()\n        stats = odontograma.obtener_estadisticas()\n        \n        paciente_nombre = \"Sin nombre\"\n        if odontograma.paciente and odontograma.paciente.codusuario:\n            paciente_nombre = f\"{odontograma.paciente.codusuario.nombre} {odontograma.paciente.codusuario.apellido}\"\n        \n        return Response({\n            'paciente': paciente_nombre,\n            'fecha_actualizacion': odontograma.fecha_actualizacion,\n            'estadisticas': stats,\n            'total_dientes': sum(stats.values())\n        })\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "OdontogramaViewSet",
+    "action_name": "por_paciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_paciente",
+    "docstring": "Listar odontogramas de un paciente.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_paciente(self, request):\n        \"\"\"Listar odontogramas de un paciente.\"\"\"\n        paciente_id = request.query_params.get('paciente_id')\n        \n        if not paciente_id:\n            return Response(\n                {'error': 'Debe proporcionar paciente_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        odontogramas = self.queryset.filter(paciente__codusuario=paciente_id)\n        serializer = self.get_serializer(odontogramas, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.historial_clinico",
+    "viewset": "TratamientoOdontologicoViewSet",
+    "action_name": "por_odontograma",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_odontograma",
+    "docstring": "Listar tratamientos de un odontograma.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_odontograma(self, request):\n        \"\"\"Listar tratamientos de un odontograma.\"\"\"\n        odontograma_id = request.query_params.get('odontograma_id')\n        \n        if not odontograma_id:\n            return Response(\n                {'error': 'Debe proporcionar odontograma_id'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        tratamientos = self.queryset.filter(odontograma_id=odontograma_id)\n        serializer = self.get_serializer(tratamientos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.sistema_pagos",
+    "viewset": "FacturaViewSet",
+    "action_name": "historial_pagos",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "historial_pagos",
+    "docstring": "Ver historial de pagos de una factura.",
+    "response_structure": "Response({\n            'factura': FacturaSerializer(factura).data,\n            'pagos': serializer.data,\n            'total_pagado': float(total_pagado),\n            'saldo_pendiente': float(factura.montototal - total_pagado)\n        }",
+    "source_code": "    @action(detail=True, methods=['get'])\n    def historial_pagos(self, request, pk=None):\n        \"\"\"Ver historial de pagos de una factura.\"\"\"\n        factura = self.get_object()\n        pagos = Pago.objects.filter(idfactura=factura)\n        \n        serializer = PagoSerializer(pagos, many=True)\n        total_pagado = pagos.aggregate(Sum('montopagado'))['montopagado__sum'] or 0\n        \n        return Response({\n            'factura': FacturaSerializer(factura).data,\n            'pagos': serializer.data,\n            'total_pagado': float(total_pagado),\n            'saldo_pendiente': float(factura.montototal - total_pagado)\n        })\n"
+  },
+  {
+    "app": "apps.sistema_pagos",
+    "viewset": "FacturaViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Listar facturas pendientes de pago.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def pendientes(self, request):\n        \"\"\"Listar facturas pendientes de pago.\"\"\"\n        # Buscar estado \"pendiente\" \n        estado_pendiente = Estadodefactura.objects.filter(\n            estado__icontains='pendiente'\n        ).first()\n        \n        if estado_pendiente:\n            facturas = self.queryset.filter(idestadofactura=estado_pendiente)\n        else:\n            facturas = self.queryset.none()\n        \n        serializer = self.get_serializer(facturas, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.sistema_pagos",
+    "viewset": "PagoViewSet",
+    "action_name": "hoy",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "hoy",
+    "docstring": "Pagos realizados hoy.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def hoy(self, request):\n        \"\"\"Pagos realizados hoy.\"\"\"\n        from django.utils import timezone\n        hoy = timezone.now().date()\n        pagos = self.queryset.filter(fechapago=hoy)\n        serializer = self.get_serializer(pagos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.sistema_pagos",
+    "viewset": "PagoViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Pagos pendientes (facturas con saldo pendiente).",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def pendientes(self, request):\n        \"\"\"Pagos pendientes (facturas con saldo pendiente).\"\"\"\n        # Obtener facturas con estado pendiente\n        estado_pendiente = Estadodefactura.objects.filter(estado__icontains='pendiente').first()\n        if estado_pendiente:\n            facturas_pendientes = Factura.objects.filter(idestadofactura=estado_pendiente)\n            pagos = self.queryset.filter(idfactura__in=facturas_pendientes)\n        else:\n            pagos = self.queryset.none()\n        \n        serializer = self.get_serializer(pagos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.sistema_pagos",
+    "viewset": "PagoViewSet",
+    "action_name": "resumen",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "resumen",
+    "docstring": "Resumen de pagos del día/mes.",
+    "response_structure": "Response({\n            'hoy': {\n                'cantidad': pagos_hoy.count(),\n                'total': float(total_hoy)\n            },\n            'mes_actual': {\n                'cantidad': pagos_mes.count(),\n                'total': float(total_mes)\n            }\n        }",
+    "source_code": "    @action(detail=False, methods=['get'])\n    def resumen(self, request):\n        \"\"\"Resumen de pagos del día/mes.\"\"\"\n        from django.utils import timezone\n        \n        hoy = timezone.now().date()\n        inicio_mes = hoy.replace(day=1)\n        \n        # Pagos de hoy\n        pagos_hoy = self.queryset.filter(fechapago=hoy)\n        total_hoy = pagos_hoy.aggregate(Sum('montopagado'))['montopagado__sum'] or 0\n        \n        # Pagos del mes\n        pagos_mes = self.queryset.filter(\n            fechapago__gte=inicio_mes,\n            fechapago__lte=hoy\n        )\n        total_mes = pagos_mes.aggregate(Sum('montopagado'))['montopagado__sum'] or 0\n        \n        return Response({\n            'hoy': {\n                'cantidad': pagos_hoy.count(),\n                'total': float(total_hoy)\n            },\n            'mes_actual': {\n                'cantidad': pagos_mes.count(),\n                'total': float(total_mes)\n            }\n        })\n"
+  },
+  {
+    "app": "apps.sistema_pagos",
+    "viewset": "PagoViewSet",
+    "action_name": "resumen_ingresos",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "resumen-ingresos",
+    "docstring": "Resumen de ingresos por período.",
+    "response_structure": "Response({\n            'hoy': float(total_hoy),\n            'semana': float(total_semana),\n            'mes': float(total_mes)\n        }",
+    "source_code": "    @action(detail=False, methods=['get'], url_path='resumen-ingresos')\n    def resumen_ingresos(self, request):\n        \"\"\"Resumen de ingresos por período.\"\"\"\n        from django.utils import timezone\n        from datetime import timedelta\n        \n        hoy = timezone.now().date()\n        inicio_mes = hoy.replace(day=1)\n        inicio_semana = hoy - timedelta(days=hoy.weekday())\n        \n        # Ingresos de hoy\n        total_hoy = self.queryset.filter(fechapago=hoy).aggregate(\n            Sum('montopagado'))['montopagado__sum'] or 0\n        \n        # Ingresos de la semana\n        total_semana = self.queryset.filter(\n            fechapago__gte=inicio_semana).aggregate(\n            Sum('montopagado'))['montopagado__sum'] or 0\n        \n        # Ingresos del mes\n        total_mes = self.queryset.filter(\n            fechapago__gte=inicio_mes).aggregate(\n            Sum('montopagado'))['montopagado__sum'] or 0\n        \n        return Response({\n            'hoy': float(total_hoy),\n            'semana': float(total_semana),\n            'mes': float(total_mes)\n        })\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "AlertaInventarioViewSet",
+    "action_name": "generar",
+    "methods": [
+      "post"
+    ],
+    "detail": false,
+    "url_path": "generar",
+    "docstring": "Genera alertas automáticas basadas en el estado actual del inventario.\n\nPOST /api/v1/inventario/alertas/generar/",
+    "response_structure": "Response({\n            'mensaje': f'Se generaron {alertas_creadas} nuevas alertas',\n            'alertas_creadas': alertas_creadas\n        }",
+    "source_code": "    @action(detail=False, methods=['post'])\n    def generar(self, request):\n        \"\"\"\n        Genera alertas automáticas basadas en el estado actual del inventario.\n        \n        POST /api/v1/inventario/alertas/generar/\n        \"\"\"\n        alertas_creadas = 0\n        \n        # Alertas de stock bajo\n        insumos_stock_bajo = Insumo.objects.filter(\n            stock_actual__lte=F('stock_minimo'),\n            stock_actual__gt=0,\n            activo=True\n        )\n        \n        for insumo in insumos_stock_bajo:\n            # Verificar que no exista alerta pendiente\n            if not AlertaInventario.objects.filter(\n                insumo=insumo,\n                tipo_alerta='stock_bajo',\n                resuelta=False\n            ).exists():\n                AlertaInventario.objects.create(\n                    insumo=insumo,\n                    tipo_alerta='stock_bajo',\n                    mensaje=f\"Stock bajo: {insumo.stock_actual} {insumo.unidad_medida}. Mínimo: {insumo.stock_minimo}\",\n                    prioridad='alta'\n                )\n                alertas_creadas += 1\n        \n        # Alertas de stock agotado\n        insumos_agotados = Insumo.objects.filter(\n            stock_actual=0,\n            activo=True\n        )\n        \n        for insumo in insumos_agotados:\n            if not AlertaInventario.objects.filter(\n                insumo=insumo,\n                tipo_alerta='stock_agotado',\n                resuelta=False\n            ).exists():\n                AlertaInventario.objects.create(\n                    insumo=insumo,\n                    tipo_alerta='stock_agotado',\n                    mensaje=f\"Stock agotado de {insumo.nombre}\",\n                    prioridad='critica'\n                )\n                alertas_creadas += 1\n        \n        # Alertas de próximos a vencer\n        fecha_limite = timezone.now().date() + timedelta(days=30)\n        insumos_vencer = Insumo.objects.filter(\n            requiere_vencimiento=True,\n            fecha_vencimiento__lte=fecha_limite,\n            fecha_vencimiento__gte=timezone.now().date(),\n            activo=True\n        )\n        \n        for insumo in insumos_vencer:\n            if not AlertaInventario.objects.filter(\n                insumo=insumo,\n                tipo_alerta='proximo_vencer',\n                resuelta=False\n            ).exists():\n                dias_restantes = (insumo.fecha_vencimiento - timezone.now().date()).days\n                AlertaInventario.objects.create(\n                    insumo=insumo,\n                    tipo_alerta='proximo_vencer',\n                    mensaje=f\"Vence en {dias_restantes} días (fecha: {insumo.fecha_vencimiento})\",\n                    prioridad='media'\n                )\n                alertas_creadas += 1\n        \n        return Response({\n            'mensaje': f'Se generaron {alertas_creadas} nuevas alertas',\n            'alertas_creadas': alertas_creadas\n        }, status=status.HTTP_201_CREATED)\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "AlertaInventarioViewSet",
+    "action_name": "pendientes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "pendientes",
+    "docstring": "Lista solo alertas pendientes.\n\nGET /api/v1/inventario/alertas/pendientes/",
+    "response_structure": "Response({\n            'total': alertas.count(),\n            'por_prioridad': por_prioridad,\n            'alertas': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'])\n    def pendientes(self, request):\n        \"\"\"\n        Lista solo alertas pendientes.\n        \n        GET /api/v1/inventario/alertas/pendientes/\n        \"\"\"\n        alertas = self.queryset.filter(resuelta=False)\n        \n        por_prioridad = {\n            'critica': alertas.filter(prioridad='critica').count(),\n            'alta': alertas.filter(prioridad='alta').count(),\n            'media': alertas.filter(prioridad='media').count(),\n            'baja': alertas.filter(prioridad='baja').count(),\n        }\n        \n        serializer = self.get_serializer(alertas, many=True)\n        return Response({\n            'total': alertas.count(),\n            'por_prioridad': por_prioridad,\n            'alertas': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "AlertaInventarioViewSet",
+    "action_name": "resolver",
+    "methods": [
+      "post"
+    ],
+    "detail": true,
+    "url_path": "resolver",
+    "docstring": "Marca una alerta como resuelta.\n\nPOST /api/v1/inventario/alertas/{id}/resolver/",
+    "response_structure": null,
+    "source_code": "    @action(detail=True, methods=['post'])\n    def resolver(self, request, pk=None):\n        \"\"\"\n        Marca una alerta como resuelta.\n        \n        POST /api/v1/inventario/alertas/{id}/resolver/\n        \"\"\"\n        alerta = self.get_object()\n        alerta.resuelta = True\n        alerta.fecha_resolucion = timezone.now()\n        alerta.save()\n        \n        serializer = self.get_serializer(alerta)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "InsumoViewSet",
+    "action_name": "historial_movimientos",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "historial_movimientos",
+    "docstring": "Historial completo de movimientos de un insumo.\n\nGET /api/v1/inventario/insumos/{id}/historial_movimientos/",
+    "response_structure": "Response({\n            'insumo': InsumoDetailSerializer(insumo).data,\n            'movimientos': serializer.data\n        }",
+    "source_code": "    @action(detail=True, methods=['get'])\n    def historial_movimientos(self, request, pk=None):\n        \"\"\"\n        Historial completo de movimientos de un insumo.\n        \n        GET /api/v1/inventario/insumos/{id}/historial_movimientos/\n        \"\"\"\n        insumo = self.get_object()\n        movimientos = insumo.movimientos.all()\n        \n        serializer = MovimientoInventarioListSerializer(movimientos, many=True)\n        return Response({\n            'insumo': InsumoDetailSerializer(insumo).data,\n            'movimientos': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "InsumoViewSet",
+    "action_name": "proximos_vencer",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "proximos_vencer",
+    "docstring": "Lista insumos próximos a vencer (30 días).\n\nGET /api/v1/inventario/insumos/proximos_vencer/",
+    "response_structure": "Response({\n            'total': insumos_vencer.count(),\n            'insumos': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'])\n    def proximos_vencer(self, request):\n        \"\"\"\n        Lista insumos próximos a vencer (30 días).\n        \n        GET /api/v1/inventario/insumos/proximos_vencer/\n        \"\"\"\n        dias = int(request.query_params.get('dias', 30))\n        fecha_limite = timezone.now().date() + timedelta(days=dias)\n        \n        insumos_vencer = self.queryset.filter(\n            requiere_vencimiento=True,\n            fecha_vencimiento__lte=fecha_limite,\n            fecha_vencimiento__gte=timezone.now().date(),\n            activo=True\n        ).order_by('fecha_vencimiento')\n        \n        serializer = InsumoListSerializer(insumos_vencer, many=True)\n        return Response({\n            'total': insumos_vencer.count(),\n            'insumos': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "InsumoViewSet",
+    "action_name": "stock_bajo",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "stock_bajo",
+    "docstring": "Lista insumos con stock por debajo del mínimo.\n\nGET /api/v1/inventario/insumos/stock_bajo/",
+    "response_structure": "Response({\n            'total': insumos_bajo.count(),\n            'insumos': serializer.data\n        }",
+    "source_code": "    @action(detail=False, methods=['get'])\n    def stock_bajo(self, request):\n        \"\"\"\n        Lista insumos con stock por debajo del mínimo.\n        \n        GET /api/v1/inventario/insumos/stock_bajo/\n        \"\"\"\n        insumos_bajo = self.queryset.filter(\n            stock_actual__lte=F('stock_minimo'),\n            activo=True\n        ).order_by('stock_actual')\n        \n        serializer = InsumoListSerializer(insumos_bajo, many=True)\n        return Response({\n            'total': insumos_bajo.count(),\n            'insumos': serializer.data\n        })\n"
+  },
+  {
+    "app": "apps.inventario",
+    "viewset": "MovimientoInventarioViewSet",
+    "action_name": "resumen_periodo",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "resumen_periodo",
+    "docstring": "Resumen de movimientos en un periodo.\n\nGET /api/v1/inventario/movimientos/resumen_periodo/?fecha_inicio=YYYY-MM-DD&fecha_fin=YYYY-MM-DD",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def resumen_periodo(self, request):\n        \"\"\"\n        Resumen de movimientos en un periodo.\n        \n        GET /api/v1/inventario/movimientos/resumen_periodo/?fecha_inicio=YYYY-MM-DD&fecha_fin=YYYY-MM-DD\n        \"\"\"\n        from datetime import datetime\n        \n        fecha_inicio = request.query_params.get('fecha_inicio')\n        fecha_fin = request.query_params.get('fecha_fin')\n        \n        if not fecha_inicio or not fecha_fin:\n            hoy = timezone.now().date()\n            fecha_fin = hoy\n            fecha_inicio = hoy.replace(day=1)\n        else:\n            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()\n            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()\n        \n        movimientos = self.queryset.filter(\n            fecha_movimiento__date__range=[fecha_inicio, fecha_fin]\n        )\n        \n        resumen = {\n            'periodo': {\n                'inicio': fecha_inicio.isoformat(),\n                'fin': fecha_fin.isoformat()\n            },\n            'total_movimientos': movimientos.count(),\n            'por_tipo': list(\n                movimientos.values('tipo_movimiento')\n                .annotate(cantidad=Count('id'), costo_total=Sum('costo_total'))\n                .order_by('tipo_movimiento')\n            ),\n            'costo_total_entradas': float(\n                movimientos.filter(tipo_movimiento='entrada')\n                .aggregate(total=Sum('costo_total'))['total'] or 0\n            ),\n            'top_movimientos': MovimientoInventarioListSerializer(\n                movimientos.order_by('-costo_total')[:10],\n                many=True\n            ).data\n        }\n        \n        return Response(resumen)\n"
+  },
+  {
+    "app": "apps.administracion_clinica",
+    "viewset": "ComboServicioViewSet",
+    "action_name": "calcular_precio",
+    "methods": [
+      "get"
+    ],
+    "detail": true,
+    "url_path": "calcular_precio",
+    "docstring": "Calcular precio total del combo.",
+    "response_structure": "Response({\n            'combo_id': combo.id,\n            'nombre': combo.nombre,\n            'precio_total_sin_descuento': combo.calcular_precio_total_servicios(),\n            'descuento_porcentaje': combo.descuento_porcentaje,\n            'precio_final': combo.calcular_precio_final(),\n            'duracion_total_minutos': combo.calcular_duracion_total(),\n            'servicios_incluidos': combo.detalles.count()\n        }",
+    "source_code": "    @action(detail=True, methods=['get'])\n    def calcular_precio(self, request, pk=None):\n        \"\"\"Calcular precio total del combo.\"\"\"\n        combo = self.get_object()\n        \n        return Response({\n            'combo_id': combo.id,\n            'nombre': combo.nombre,\n            'precio_total_sin_descuento': combo.calcular_precio_total_servicios(),\n            'descuento_porcentaje': combo.descuento_porcentaje,\n            'precio_final': combo.calcular_precio_final(),\n            'duracion_total_minutos': combo.calcular_duracion_total(),\n            'servicios_incluidos': combo.detalles.count()\n        })\n"
+  },
+  {
+    "app": "apps.administracion_clinica",
+    "viewset": "ComboServicioViewSet",
+    "action_name": "vigentes",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "vigentes",
+    "docstring": "Listar combos vigentes y activos.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def vigentes(self, request):\n        \"\"\"Listar combos vigentes y activos.\"\"\"\n        hoy = timezone.now().date()\n        \n        combos = self.queryset.filter(\n            activo=True\n        ).filter(\n            # Sin fecha de inicio o ya comenzó\n            fecha_inicio__lte=hoy\n        ).filter(\n            # Sin fecha de fin o aún no terminó\n            fecha_fin__gte=hoy\n        ) | self.queryset.filter(\n            activo=True,\n            fecha_inicio__isnull=True,\n            fecha_fin__isnull=True\n        )\n        \n        serializer = self.get_serializer(combos, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.administracion_clinica",
+    "viewset": "ServicioViewSet",
+    "action_name": "activos",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "activos",
+    "docstring": "Listar solo servicios activos.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def activos(self, request):\n        \"\"\"Listar solo servicios activos.\"\"\"\n        servicios = self.queryset.filter(activo=True)\n        serializer = ServicioListaSerializer(servicios, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.administracion_clinica",
+    "viewset": "ServicioViewSet",
+    "action_name": "por_categoria",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_categoria",
+    "docstring": "Filtrar servicios por categoría.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_categoria(self, request):\n        \"\"\"Filtrar servicios por categoría.\"\"\"\n        categoria = request.query_params.get('categoria')\n        \n        if not categoria:\n            return Response(\n                {'error': 'Debe proporcionar el parámetro categoria'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n        \n        servicios = self.queryset.filter(\n            categoria=categoria,\n            activo=True\n        )\n        serializer = ServicioListaSerializer(servicios, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.auditoria",
+    "viewset": "BitacoraViewSet",
+    "action_name": "actividad_reciente",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "actividad-reciente",
+    "docstring": "Obtener actividad reciente (últimos 50 registros).",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'], url_path='actividad-reciente')\n    def actividad_reciente(self, request):\n        \"\"\"Obtener actividad reciente (últimos 50 registros).\"\"\"\n        limit = int(request.query_params.get('limit', 50))\n        registros = self.queryset.order_by('-fecha')[:limit]\n        serializer = self.get_serializer(registros, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.auditoria",
+    "viewset": "BitacoraViewSet",
+    "action_name": "logs",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "logs",
+    "docstring": "Alias para listar todos los logs (igual que list).",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def logs(self, request):\n        \"\"\"Alias para listar todos los logs (igual que list).\"\"\"\n        return self.list(request)\n"
+  },
+  {
+    "app": "apps.auditoria",
+    "viewset": "BitacoraViewSet",
+    "action_name": "por_tabla",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_tabla",
+    "docstring": "Filtrar registros por tabla afectada.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_tabla(self, request):\n        \"\"\"Filtrar registros por tabla afectada.\"\"\"\n        tabla = request.query_params.get('tabla')\n        \n        if not tabla:\n            return Response(\n                {'error': 'Debe proporcionar el parámetro tabla'},\n                status=400\n            )\n        \n        registros = self.queryset.filter(tabla_afectada__icontains=tabla)\n        serializer = self.get_serializer(registros, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.auditoria",
+    "viewset": "BitacoraViewSet",
+    "action_name": "por_usuario",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "por_usuario",
+    "docstring": "Filtrar registros por usuario.",
+    "response_structure": null,
+    "source_code": "    @action(detail=False, methods=['get'])\n    def por_usuario(self, request):\n        \"\"\"Filtrar registros por usuario.\"\"\"\n        usuario_id = request.query_params.get('usuario_id')\n        \n        if not usuario_id:\n            return Response(\n                {'error': 'Debe proporcionar usuario_id'},\n                status=400\n            )\n        \n        registros = self.queryset.filter(usuario_id=usuario_id)\n        serializer = self.get_serializer(registros, many=True)\n        return Response(serializer.data)\n"
+  },
+  {
+    "app": "apps.auditoria",
+    "viewset": "BitacoraViewSet",
+    "action_name": "resumen",
+    "methods": [
+      "get"
+    ],
+    "detail": false,
+    "url_path": "resumen",
+    "docstring": "Resumen de actividad en la bitácora.",
+    "response_structure": "Response({\n            'por_accion': list(por_accion),\n            'por_tabla': list(por_tabla),\n            'ultimos_7_dias': ultimos_7_dias,\n            'ultimos_30_dias': ultimos_30_dias,\n            'total_registros': self.queryset.count()\n        }",
+    "source_code": "    @action(detail=False, methods=['get'])\n    def resumen(self, request):\n        \"\"\"Resumen de actividad en la bitácora.\"\"\"\n        from django.utils import timezone\n        from datetime import timedelta\n        \n        hoy = timezone.now().date()\n        hace_7_dias = hoy - timedelta(days=7)\n        hace_30_dias = hoy - timedelta(days=30)\n        \n        # Actividad por acción\n        por_accion = self.queryset.values('accion').annotate(\n            total=Count('id')\n        ).order_by('-total')\n        \n        # Actividad por tabla\n        por_tabla = self.queryset.values('tabla_afectada').annotate(\n            total=Count('id')\n        ).order_by('-total')[:10]\n        \n        # Actividad reciente\n        ultimos_7_dias = self.queryset.filter(\n            fecha__gte=hace_7_dias\n        ).count()\n        \n        ultimos_30_dias = self.queryset.filter(\n            fecha__gte=hace_30_dias\n        ).count()\n        \n        return Response({\n            'por_accion': list(por_accion),\n            'por_tabla': list(por_tabla),\n            'ultimos_7_dias': ultimos_7_dias,\n            'ultimos_30_dias': ultimos_30_dias,\n            'total_registros': self.queryset.count()\n        })\n"
+  }
+]

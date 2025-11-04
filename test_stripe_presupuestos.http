@@ -1,0 +1,101 @@
+### ============================================
+### PRUEBAS DE STRIPE - PAGO DE PRESUPUESTOS
+### ============================================
+
+### Variables
+@baseUrl = http://localhost:8000/api/v1
+@token = {{login.response.body.token}}
+@presupuesto_id = 1
+@pago_id = {{crear_intencion.response.body.pago_id}}
+@payment_intent_id = {{crear_intencion.response.body.client_secret}}
+
+### ============================================
+### 1. Login como Paciente
+### ============================================
+# @name login
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "ana.lopez@email.com",
+  "password": "paciente123"
+}
+
+### ============================================
+### 2. Obtener Presupuestos del Paciente
+### ============================================
+GET {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{token}}
+
+### ============================================
+### 3. Ver Detalle de un Presupuesto
+### ============================================
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuesto_id}}/
+Authorization: Token {{token}}
+
+### ============================================
+### 4. Crear Payment Intent para Presupuesto
+### ============================================
+# @name crear_intencion
+POST {{baseUrl}}/pagos/stripe/crear-intencion-presupuesto/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "presupuesto_id": {{presupuesto_id}},
+  "monto": 500.00
+}
+
+### ============================================
+### 5. Confirmar Pago de Presupuesto
+### ============================================
+# Nota: En producción esto lo haría el frontend después de procesar con Stripe.js
+# Para testing, se puede simular actualizando el estado directamente en BD
+POST {{baseUrl}}/pagos/stripe/confirmar-pago-presupuesto/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "pago_id": {{pago_id}},
+  "presupuesto_id": {{presupuesto_id}},
+  "payment_intent_id": "{{payment_intent_id}}"
+}
+
+### ============================================
+### 6. Ver Pagos en Línea del Paciente
+### ============================================
+GET {{baseUrl}}/pagos/pagos-online/
+Authorization: Token {{token}}
+
+### ============================================
+### 7. Ver Presupuesto Actualizado (debe estar aprobado)
+### ============================================
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuesto_id}}/
+Authorization: Token {{token}}
+
+### ============================================
+### PRUEBAS ADICIONALES
+### ============================================
+
+### Obtener Clave Pública de Stripe
+GET {{baseUrl}}/pagos/stripe/clave-publica/
+Authorization: Token {{token}}
+
+### Crear Payment Intent con Monto Total del Presupuesto
+POST {{baseUrl}}/pagos/stripe/crear-intencion-presupuesto/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "presupuesto_id": {{presupuesto_id}}
+}
+
+### Intentar pagar presupuesto rechazado (debe fallar)
+POST {{baseUrl}}/pagos/stripe/crear-intencion-presupuesto/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "presupuesto_id": 999,
+  "monto": 100.00
+}

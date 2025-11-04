@@ -1,0 +1,469 @@
+###############################################################################
+# 🏥 CLÍNICA DENTAL - TESTS ODONTÓLOGO
+# Archivo de pruebas para ROL: ODONTÓLOGO
+# Base URL: http://localhost:8001/api/v1
+###############################################################################
+
+# ⚠️ IMPORTANTE: MUCHOS ENDPOINTS RETORNAN 404 PORQUE LOS REGISTROS NO EXISTEN
+# 
+# Los IDs usados en este archivo (1, 127, 131, etc.) son ejemplos.
+# Para que funcionen correctamente:
+# 
+# 1. Primero ejecuta requests de LISTADO (GET) para ver qué datos existen:
+#    - Request #7: Ver mis citas (captura un ID de cita real)
+#    - Request #14: Ver pacientes (captura un ID de paciente real)
+#    - Request #24: Ver planes (captura un ID de plan real)
+# 
+# 2. Si no hay datos, crea primero:
+#    - Request #25: Crear plan de tratamiento (captura el ID retornado)
+#    - Luego usa ese ID en requests posteriores
+# 
+# 3. O ejecuta el script de población: python poblar_base_completa.py
+
+# Variables globales
+@baseUrl = http://localhost:8001/api/v1
+@odontologoEmail = carlos.martinez@clinica.com
+@odontologoPassword = odontologo123
+
+
+###############################################################################
+# 🔐 AUTENTICACIÓN ODONTÓLOGO
+###############################################################################
+
+### 1. Login Odontólogo
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{odontologoEmail}}",
+  "password": "{{odontologoPassword}}"
+}
+
+### Capturar token del odontólogo
+@odontologoToken = {{loginOdontologo.response.body.token}}
+
+### 2. Verificar Token Odontólogo
+GET {{baseUrl}}/auth/verificar-token/
+Authorization: Token {{odontologoToken}}
+
+### 3. Ver Mi Perfil Profesional (Ver Datos Usuario Actual)
+GET {{baseUrl}}/usuarios/usuarios/yo/
+Authorization: Token {{odontologoToken}}
+
+### 4. Actualizar Mi Perfil Profesional
+# Note: /profesionales/odontologos/ endpoint is read-only (GET only)
+# Use /usuarios/usuarios/<id>/ to update profile after getting ID from request #3
+PATCH {{baseUrl}}/usuarios/usuarios/96/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "telefono": "71234567"
+}
+
+### 5. Cambiar Mi Contraseña
+POST {{baseUrl}}/auth/cambiar-password/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "password_actual": "{{odontologoPassword}}",
+  "password_nuevo": "newpassword123",
+  "password_confirmacion": "newpassword123"
+}
+
+### 6. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+
+###############################################################################
+# 📅 MIS CITAS (ODONTÓLOGO)
+###############################################################################
+
+### 7. Ver Mis Citas Asignadas
+GET {{baseUrl}}/citas/mis-citas-odontologo/
+Authorization: Token {{odontologoToken}}
+
+### 8. Ver Citas del Día
+GET {{baseUrl}}/citas/mis-citas-odontologo/?fecha=2025-11-02
+Authorization: Token {{odontologoToken}}
+
+### 9. Ver Citas Pendientes
+GET {{baseUrl}}/citas/mis-citas-odontologo/?estado=pendiente
+Authorization: Token {{odontologoToken}}
+
+### 10. Ver Detalle de Cita
+# ⚠️ NOTA: Reemplaza 127 con un ID real de tus citas (obtenido de request #7)
+GET {{baseUrl}}/citas/consultas/127/
+Authorization: Token {{odontologoToken}}
+
+### 11. Actualizar Estado de Cita
+# ⚠️ NOTA: Reemplaza 127 con un ID real de tus citas
+PATCH {{baseUrl}}/citas/consultas/127/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "idestadoconsulta": 3,
+  "diagnostico": "Caries profunda en molar 36"
+}
+
+### 12. Confirmar Cita
+# ⚠️ NOTA: Reemplaza 127 con un ID real de tus citas
+POST {{baseUrl}}/citas/consultas/127/confirmar/
+Authorization: Token {{odontologoToken}}
+
+### 13. Completar Cita (No existe endpoint /completar/)
+# ⚠️ NOTA: Reemplaza 127 con un ID real de tus citas
+# Use actualizar_estado to change status instead
+POST {{baseUrl}}/citas/consultas/127/actualizar_estado/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "nuevo_estado": 3,
+  "diagnostico": "Tratamiento de conducto realizado exitosamente",
+  "observaciones": "Paciente tolera bien el procedimiento"
+}
+
+
+###############################################################################
+# 👥 MIS PACIENTES (ODONTÓLOGO)
+###############################################################################
+
+### 14. Ver Lista de Mis Pacientes
+# Endpoint /usuarios/mis-pacientes/ doesn't exist
+# Use /usuarios/pacientes/ to list all patients
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{odontologoToken}}
+
+### 15. Buscar Paciente por Nombre
+GET {{baseUrl}}/usuarios/pacientes/?search=Juan
+Authorization: Token {{odontologoToken}}
+
+### 16. Ver Perfil de Paciente
+# ⚠️ NOTA: Reemplaza 131 con un ID real de paciente (obtenido de request #14)
+GET {{baseUrl}}/usuarios/pacientes/131/
+Authorization: Token {{odontologoToken}}
+
+
+###############################################################################
+# 📋 HISTORIAL CLÍNICO (ODONTÓLOGO)
+###############################################################################
+
+### 17. Ver Historial Clínico del Paciente
+# ⚠️ NOTA: Reemplaza 131 con un ID real de paciente
+GET {{baseUrl}}/historial-clinico/paciente/131/
+Authorization: Token {{odontologoToken}}
+
+### 18. Agregar Nota al Historial
+# ⚠️ NOTA: Reemplaza 131 con un ID real de historial del paciente
+# Endpoint /paciente/131/notas/ doesn't exist
+# Create a new historial entry instead
+POST {{baseUrl}}/historial-clinico/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "historial": 131,
+  "titulo": "Observación - Sensibilidad dental",
+  "descripcion": "Paciente presenta sensibilidad dental en premolares superiores",
+  "fecha": "2025-11-02"
+}
+
+### 19. Subir Documento Clínico
+# ⚠️ NOTA: Reemplaza 127 y 131 con IDs reales de consulta y paciente
+POST {{baseUrl}}/historial-clinico/documentos/
+Authorization: Token {{odontologoToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="idconsulta"
+
+127
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="pacientecodigo"
+
+131
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="tipodocumento"
+
+Radiografía
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="descripcion"
+
+Radiografía periapical del diente 36
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="archivo"; filename="radiografia.pdf"
+Content-Type: application/pdf
+
+(binary content)
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 20. Ver Documentos del Paciente
+# ⚠️ NOTA: Reemplaza 131 con un ID real de paciente
+GET {{baseUrl}}/historial-clinico/documentos/por_paciente/?paciente_id=131
+Authorization: Token {{odontologoToken}}
+
+### 21. Ver Odontograma del Paciente
+# ⚠️ NOTA: Reemplaza 131 con un ID real de paciente
+GET {{baseUrl}}/historial-clinico/odontogramas/por_paciente/?paciente_id=131
+Authorization: Token {{odontologoToken}}
+
+### 22. Actualizar Odontograma
+# ⚠️ NOTA: Reemplaza 1 con un ID real de odontograma (obtenido de request #21)
+# Endpoint is /odontogramas/ (plural) not /odontograma/
+# Use PATCH instead of PUT
+PATCH {{baseUrl}}/historial-clinico/odontogramas/1/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "observaciones": "Obturación con amalgama en cara oclusal actualizada"
+}
+
+### 23. Agregar Diente al Odontograma (Crear Odontograma)
+# ⚠️ NOTA: Reemplaza 131 con un ID real de paciente
+# Endpoint is /odontogramas/ (plural)
+POST {{baseUrl}}/historial-clinico/odontogramas/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": 131,
+  "fecha_creacion": "2025-11-02",
+  "dientes": "37: Sano - Diente en buen estado"
+}
+
+
+###############################################################################
+# 💰 PLANES DE TRATAMIENTO (ODONTÓLOGO)
+###############################################################################
+
+### 24. Ver Planes de Tratamiento de Mis Pacientes
+# ℹ️ Primero ejecuta este para ver si existen planes
+GET {{baseUrl}}/tratamientos/planes-tratamiento/?odontologo=96
+Authorization: Token {{odontologoToken}}
+
+### 25. Crear Plan de Tratamiento
+# ⚠️ NOTA: Reemplaza 131 con un ID real de paciente (obtenido de request #14)
+# ⚠️ IMPORTANTE: Ejecuta ESTE primero si no existen planes, y captura el ID retornado
+POST {{baseUrl}}/tratamientos/planes-tratamiento/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": 131,
+  "descripcion": "Plan de ortodoncia correctiva - Corregir maloclusión clase II",
+  "observaciones": "Tratamiento estimado de 24 meses"
+}
+
+### 26. Ver Detalle de Plan
+# ⚠️ NOTA: Reemplaza 1 con el ID real del plan (obtenido de request #24 o #25)
+GET {{baseUrl}}/tratamientos/planes-tratamiento/1/
+Authorization: Token {{odontologoToken}}
+
+### 27. Actualizar Plan de Tratamiento
+# ⚠️ NOTA: Reemplaza 1 con el ID real del plan
+PATCH {{baseUrl}}/tratamientos/planes-tratamiento/1/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "observaciones": "Paciente aceptó el plan, iniciamos tratamiento"
+}
+
+### 28. Agregar Procedimiento al Plan
+# ⚠️ NOTA: Reemplaza 1 con el ID real del plan y 9 con un ID de servicio válido
+POST {{baseUrl}}/tratamientos/procedimientos/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": 1,
+  "servicio": 9,
+  "descripcion": "Endodoncia del molar 36",
+  "estado": "Pendiente"
+}
+
+### 29. Completar Procedimiento
+# ⚠️ NOTA: Reemplaza 1 con el ID real del procedimiento (obtenido de request #28)
+# No existe endpoint /completar/ - usar PATCH para actualizar
+PATCH {{baseUrl}}/tratamientos/procedimientos/1/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "estado": "Completado",
+  "observaciones": "Procedimiento exitoso, paciente sin complicaciones",
+  "fecha_realizacion": "2025-11-02"
+}
+
+
+###############################################################################
+# 💵 PRESUPUESTOS (ODONTÓLOGO)
+###############################################################################
+
+### 30. Crear Presupuesto para Paciente
+# ⚠️ NOTA: Reemplaza 1 con el ID real del plan de tratamiento (obtenido de request #24 o #25)
+# ⚠️ NOTA: Reemplaza 9 con un ID real de servicio (obtenido de request #42)
+POST {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": 1,
+  "items": [
+    {
+      "servicio": 9,
+      "cantidad": 1,
+      "precio_unitario": "500.00",
+      "descripcion": "Endodoncia molar 36"
+    }
+  ],
+  "fecha_vencimiento": "2025-12-31",
+  "descuento": "100.00",
+  "notas": "Descuento por tratamiento completo"
+}
+
+### 31. Ver Presupuestos de Mis Pacientes
+# ℹ️ Ejecuta esto para ver si existen presupuestos
+GET {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoToken}}
+
+### 32. Actualizar Presupuesto
+# ⚠️ NOTA: Reemplaza 1 con el ID real del presupuesto (obtenido de request #30 o #31)
+PATCH {{baseUrl}}/tratamientos/presupuestos/1/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "descuento": "150.00",
+  "notas": "Descuento adicional por pago anticipado"
+}
+
+### 33. Agregar Item al Plan de Tratamiento
+# ⚠️ NOTA: Reemplaza 1 con el ID real del plan y 9 con un ID de servicio válido
+# El endpoint /presupuestos/1/items/ no existe según Django URLs
+# Los items de presupuesto deben incluirse al crear el presupuesto (ver request #30)
+# Este endpoint agrega servicios al PLAN, no al presupuesto
+POST {{baseUrl}}/tratamientos/planes-tratamiento/1/agregar-item/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "servicio": 9,
+  "descripcion": "Blanqueamiento dental completo"
+}
+
+
+###############################################################################
+# 📊 MIS ESTADÍSTICAS (ODONTÓLOGO)
+###############################################################################
+
+### 34. Ver Mis Citas (Proxy para estadísticas)
+# Endpoint /profesionales/mis-estadisticas/ no existe en URLs registradas
+# Usar endpoints de citas para obtener estadísticas
+GET {{baseUrl}}/citas/mis-citas-odontologo/
+Authorization: Token {{odontologoToken}}
+
+### 35. Ver Citas del Mes
+GET {{baseUrl}}/citas/mis-citas-odontologo/?fecha_inicio=2025-11-01&fecha_fin=2025-11-30
+Authorization: Token {{odontologoToken}}
+
+### 36. Ver Mis Pacientes (Proxy estadísticas)
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{odontologoToken}}
+
+### 37. Ver Procedimientos de Mis Planes
+GET {{baseUrl}}/tratamientos/procedimientos/
+Authorization: Token {{odontologoToken}}
+
+
+###############################################################################
+# 🕐 MI AGENDA (ODONTÓLOGO)
+###############################################################################
+
+### 38. Ver Mi Agenda del Día
+GET {{baseUrl}}/citas/mi-agenda/?fecha=2025-11-02
+Authorization: Token {{odontologoToken}}
+
+### 39. Ver Mi Agenda de la Semana
+GET {{baseUrl}}/citas/mi-agenda/?fecha_inicio=2025-11-02&fecha_fin=2025-11-08
+Authorization: Token {{odontologoToken}}
+
+### 40. Ver Huecos Disponibles en Mi Agenda
+GET {{baseUrl}}/citas/mis-horarios-disponibles/?fecha=2025-11-10
+Authorization: Token {{odontologoToken}}
+
+### 41. Bloquear Horario
+POST {{baseUrl}}/citas/bloquear-horario/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "fecha": "2025-11-15",
+  "horario_inicio": "14:00",
+  "horario_fin": "16:00",
+  "motivo": "Capacitación externa"
+}
+
+
+###############################################################################
+# 💊 CATÁLOGO DE SERVICIOS (ODONTÓLOGO)
+###############################################################################
+
+### 42. Ver Servicios Disponibles
+GET {{baseUrl}}/administracion/servicios/?activo=true
+Authorization: Token {{odontologoToken}}
+
+### 43. Ver Detalle de Servicio
+GET {{baseUrl}}/administracion/servicios/9/
+Authorization: Token {{odontologoToken}}
+
+### 44. Ver Tipos de Consulta  
+# Endpoint /administracion/tipos-consulta/ no existe
+# Los tipos de consulta están en el modelo de citas
+GET {{baseUrl}}/citas/consultas/
+Authorization: Token {{odontologoToken}}
+
+
+###############################################################################
+# 📝 NOTAS PARA ODONTÓLOGO
+###############################################################################
+
+# ✅ Permisos del Odontólogo:
+# - Ver y editar su perfil profesional
+# - Ver sus citas asignadas
+# - Actualizar estado de sus citas
+# - Ver y editar historiales clínicos de sus pacientes
+# - Crear y gestionar planes de tratamiento
+# - Crear y gestionar presupuestos
+# - Ver lista de sus pacientes
+# - Actualizar odontogramas
+# - Subir documentos clínicos
+# - Ver estadísticas de su trabajo
+# - Gestionar su agenda
+# - Ver catálogo de servicios
+#
+# ❌ NO puede:
+# - Ver citas de otros odontólogos (solo las propias)
+# - Ver pacientes no asignados a él
+# - Crear/editar servicios del catálogo
+# - Gestionar inventario
+# - Acceder a reportes administrativos completos
+# - Ver auditoría del sistema
+# - Gestionar usuarios del sistema
+#
+# 🔑 Credenciales por defecto:
+# - Email: carlos.martinez@clinica.com (o maria.lopez@clinica.com)
+# - Password: odontologo123
+# - Código: 96 (Carlos Martinez) / 97 (Maria Lopez)
+#
+# 💡 Tips:
+# - Ejecuta el login primero (request #1)
+# - El token se captura automáticamente
+# - Solo puedes ver/editar datos de tus pacientes asignados
+# - Verifica tu agenda antes de crear planes de tratamiento

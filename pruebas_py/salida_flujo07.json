@@ -1,0 +1,113 @@
+{
+  "flujo": {
+    "numero": 7,
+    "nombre": "Chatbot Inteligente",
+    "descripcion": "Resultados de la ejecucion del flujo 07"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T19:07:33.078653",
+    "fin": "2025-11-03T19:07:52.241228",
+    "duracion_segundos": 19.16,
+    "fecha_legible": "03/11/2025 19:07:33"
+  },
+  "estadisticas": {
+    "total_secciones": 9,
+    "secciones_exitosas": 9,
+    "secciones_fallidas": 0,
+    "tasa_exito_porcentaje": 100.0,
+    "total_errores": 0,
+    "total_datos_creados": 0
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Saludo inicial",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:35.190680",
+      "detalles": {
+        "session_id": "c906cf7f-4852-4d09-994a-38fa6c73d0c9",
+        "mensaje": "Hola"
+      }
+    },
+    {
+      "numero": 2,
+      "nombre": "Registrar informacion personal",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:37.315616",
+      "detalles": {
+        "nombre": "Juan Perez",
+        "correo": "ana.lopez@email.com",
+        "telefono": "77777777"
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Consultar citas",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:39.450943",
+      "detalles": {
+        "intent": "consultar_citas"
+      }
+    },
+    {
+      "numero": 4,
+      "nombre": "Agendar cita",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:41.557424",
+      "detalles": {
+        "intent": "agendar_cita"
+      }
+    },
+    {
+      "numero": 5,
+      "nombre": "Consultar servicios",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:43.766406",
+      "detalles": {
+        "intent": "consultar_servicios"
+      }
+    },
+    {
+      "numero": 6,
+      "nombre": "Informacion de contacto",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:45.882683",
+      "detalles": {
+        "intent": "informacion_contacto"
+      }
+    },
+    {
+      "numero": 7,
+      "nombre": "Historial de conversacion",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:48.011224",
+      "detalles": {
+        "total_mensajes": 12
+      }
+    },
+    {
+      "numero": 8,
+      "nombre": "Reiniciar conversacion",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:50.124009",
+      "detalles": {
+        "session_id": "c906cf7f-4852-4d09-994a-38fa6c73d0c9"
+      }
+    },
+    {
+      "numero": 9,
+      "nombre": "Verificar reset",
+      "exito": true,
+      "timestamp": "2025-11-03T19:07:52.241220",
+      "detalles": {
+        "mensaje": "Hola de nuevo"
+      }
+    }
+  ],
+  "datos_creados": {},
+  "errores": [],
+  "resumen": {
+    "estado": "EXITOSO",
+    "mensaje": "Todas las 9 secciones ejecutadas exitosamente"
+  }
+}

@@ -1,0 +1,305 @@
+###############################################################################
+# 🔄 PRUEBAS API - RESPALDOS AUTOMÁTICOS EN LA NUBE
+###############################################################################
+#
+# Sistema de Respaldos Automáticos con AWS S3
+# Backend: Django REST Framework
+# Almacenamiento: AWS S3 (clinica-dental-backups-2025-bolivia)
+#
+# REQUISITOS:
+# 1. Servidor corriendo: python manage.py runserver
+# 2. AWS S3 configurado con credenciales en .env
+# 3. Usuario admin creado en la base de datos
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 🔐 AUTENTICACIÓN
+###############################################################################
+
+### 1. Login como Admin
+# @name login
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "email": "admin@clinica.com",
+  "contraseña": "admin123"
+}
+
+###
+# Capturar token para usar en siguientes requests
+@token = {{login.response.body.token}}
+
+###############################################################################
+# 📊 ESTADÍSTICAS DE RESPALDOS
+###############################################################################
+
+### 2. Ver estadísticas generales
+# Muestra: total, completados, fallidos, tamaño total, último respaldo
+GET {{baseUrl}}/respaldos/estadisticas/
+Authorization: Token {{token}}
+
+###############################################################################
+# 📋 LISTAR RESPALDOS
+###############################################################################
+
+### 3. Listar todos los respaldos de la clínica
+# @name listar
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{token}}
+
+###
+# Capturar ID del primer respaldo para pruebas (si existe)
+@respaldoId = {{listar.response.body.$[0].id}}
+
+### 4. Listar solo respaldos completados
+GET {{baseUrl}}/respaldos/?estado=completado
+Authorization: Token {{token}}
+
+### 5. Listar respaldos fallidos
+GET {{baseUrl}}/respaldos/?estado=fallido
+Authorization: Token {{token}}
+
+###############################################################################
+# ➕ CREAR RESPALDO MANUAL
+###############################################################################
+
+### 6. Crear respaldo manual CON descripción
+# @name crearConDescripcion
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo manual antes de actualización importante - Fecha: 2025-11-06"
+}
+
+###
+@nuevoRespaldoId = {{crearConDescripcion.response.body.respaldo.id}}
+@archivoS3 = {{crearConDescripcion.response.body.respaldo.archivo_s3}}
+@hashMD5 = {{crearConDescripcion.response.body.respaldo.hash_md5}}
+
+### 7. Crear respaldo manual SIN descripción
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+}
+
+###############################################################################
+# 🔍 VER DETALLES DE RESPALDO
+###############################################################################
+
+### 8. Ver detalles completos del respaldo recién creado
+GET {{baseUrl}}/respaldos/{{nuevoRespaldoId}}/
+Authorization: Token {{token}}
+
+### 9. Ver detalles de un respaldo específico (usa ID existente)
+GET {{baseUrl}}/respaldos/{{respaldoId}}/
+Authorization: Token {{token}}
+
+###############################################################################
+# 📥 DESCARGAR RESPALDO
+###############################################################################
+
+### 10. Obtener URL de descarga temporal (válida por 1 hora)
+# @name urlDescarga
+GET {{baseUrl}}/respaldos/{{nuevoRespaldoId}}/descargar/
+Authorization: Token {{token}}
+
+###
+@urlS3 = {{urlDescarga.response.body.url}}
+@expiraEn = {{urlDescarga.response.body.expira_en_segundos}}
+@nombreArchivo = {{urlDescarga.response.body.archivo}}
+
+# NOTA: La URL generada es válida por 1 hora y permite descargar 
+# el archivo directamente desde S3 sin autenticación adicional
+
+###############################################################################
+# 🗑️ ELIMINAR RESPALDO
+###############################################################################
+
+### 11. Eliminar respaldo (soft delete)
+DELETE {{baseUrl}}/respaldos/{{nuevoRespaldoId}}/
+Authorization: Token {{token}}
+
+### 12. Verificar que el respaldo fue eliminado
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{token}}
+
+###############################################################################
+# 🔬 PRUEBAS DE CASOS EDGE
+###############################################################################
+
+### EDGE 1. Intentar acceder sin autenticación (debe retornar 401)
+GET {{baseUrl}}/respaldos/
+
+### EDGE 2. Intentar crear respaldo sin autenticación (debe retornar 401)
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Content-Type: application/json
+
+{
+  "descripcion": "Intento sin token"
+}
+
+### EDGE 3. Intentar ver respaldo inexistente (debe retornar 404)
+GET {{baseUrl}}/respaldos/999999/
+Authorization: Token {{token}}
+
+### EDGE 4. Intentar descargar respaldo inexistente (debe retornar 404)
+GET {{baseUrl}}/respaldos/999999/descargar/
+Authorization: Token {{token}}
+
+### EDGE 5. Intentar eliminar respaldo inexistente (debe retornar 404)
+DELETE {{baseUrl}}/respaldos/999999/
+Authorization: Token {{token}}
+
+###############################################################################
+# 🧪 PRUEBAS DE VOLUMEN
+###############################################################################
+
+### VOLUMEN 1. Crear múltiples respaldos consecutivos
+# @name respaldo1
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo #1 - Prueba de volumen"
+}
+
+###
+@id1 = {{respaldo1.response.body.respaldo.id}}
+
+### VOLUMEN 2. Crear segundo respaldo
+# @name respaldo2
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo #2 - Prueba de volumen"
+}
+
+###
+@id2 = {{respaldo2.response.body.respaldo.id}}
+
+### VOLUMEN 3. Crear tercer respaldo
+# @name respaldo3
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo #3 - Prueba de volumen"
+}
+
+###
+@id3 = {{respaldo3.response.body.respaldo.id}}
+
+### VOLUMEN 4. Verificar que todos aparecen en el listado
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{token}}
+
+### VOLUMEN 5. Verificar estadísticas actualizadas
+GET {{baseUrl}}/respaldos/estadisticas/
+Authorization: Token {{token}}
+
+### VOLUMEN 6. Limpiar respaldos de prueba
+DELETE {{baseUrl}}/respaldos/{{id1}}/
+Authorization: Token {{token}}
+
+###
+DELETE {{baseUrl}}/respaldos/{{id2}}/
+Authorization: Token {{token}}
+
+###
+DELETE {{baseUrl}}/respaldos/{{id3}}/
+Authorization: Token {{token}}
+
+###############################################################################
+# 📋 AUDITORÍA
+###############################################################################
+
+### AUDIT 1. Ver auditoría de operaciones en tabla respaldo
+GET {{baseUrl}}/auditoria/logs/?tabla=respaldo
+Authorization: Token {{token}}
+
+### AUDIT 2. Ver auditoría del día actual
+GET {{baseUrl}}/auditoria/logs/?fecha_inicio=2025-11-06
+Authorization: Token {{token}}
+
+### AUDIT 3. Ver auditoría de acciones del usuario admin
+GET {{baseUrl}}/auditoria/logs/?usuario=1
+Authorization: Token {{token}}
+
+###############################################################################
+# 🚪 LOGOUT
+###############################################################################
+
+### 13. Cerrar sesión
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{token}}
+
+
+###############################################################################
+# 📝 NOTAS IMPORTANTES
+###############################################################################
+#
+# ENDPOINTS DISPONIBLES:
+# ✅ GET    /api/v1/respaldos/                       - Listar respaldos
+# ✅ GET    /api/v1/respaldos/{id}/                  - Ver detalles
+# ✅ POST   /api/v1/respaldos/crear_respaldo_manual/ - Crear respaldo
+# ✅ GET    /api/v1/respaldos/{id}/descargar/        - URL de descarga
+# ✅ DELETE /api/v1/respaldos/{id}/                  - Eliminar respaldo
+# ✅ GET    /api/v1/respaldos/estadisticas/          - Estadísticas
+#
+# CARACTERÍSTICAS:
+# • Multi-tenancy: Cada clínica solo ve sus respaldos
+# • Compresión: gzip automático (70-90% reducción)
+# • Integridad: Hash MD5 para verificación
+# • Seguridad: Encriptación AES256 en S3
+# • URLs temporales: Presigned URLs válidas por 1 hora
+# • Soft delete: No eliminación física de registros
+# • Auditoría: Todas las operaciones son registradas
+#
+# DATOS RESPALDADOS:
+# • Usuarios y Pacientes
+# • Consultas
+# • Historiales Clínicos
+# • Tratamientos Odontológicos
+# • Planes de Tratamiento y Presupuestos
+# • Facturas y Pagos
+# • Bitácora de Auditoría
+#
+# ESTRUCTURA S3:
+# /backups/{clinica_id}/{año}/{mes}/backup_{timestamp}.json.gz
+#
+# LIMPIEZA AUTOMÁTICA:
+# • Respaldos >30 días son eliminados automáticamente
+#
+###############################################################################
+
+
+###############################################################################
+# 🎯 FLUJO COMPLETO RECOMENDADO
+###############################################################################
+#
+# 1. Login (request #1)
+# 2. Ver estadísticas (request #2)
+# 3. Listar respaldos existentes (request #3)
+# 4. Crear respaldo manual (request #6)
+# 5. Ver detalles del nuevo respaldo (request #8)
+# 6. Obtener URL de descarga (request #10)
+# 7. Verificar en estadísticas (request #2)
+# 8. Logout (request #13)
+#
+# OPCIONAL: Probar casos edge (EDGE 1-5)
+# OPCIONAL: Probar volumen (VOLUMEN 1-6)
+# OPCIONAL: Ver auditoría (AUDIT 1-3)
+#
+###############################################################################

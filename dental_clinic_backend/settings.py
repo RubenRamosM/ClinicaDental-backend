@@ -139,16 +139,35 @@ INSTALLED_APPS = [
     "rest_framework",
     'django_filters',
     "rest_framework.authtoken",
-    # App principal - contiene todos los modelos
-    "api",            # App principal (Empresa, Usuario, Paciente, Consulta, etc)
-    "no_show_policies", # Políticas de no-show
-    "chatbot",        # Chatbot Odontológico con OpenAI
     "whitenoise.runserver_nostatic",
-    # Apps modularizadas - COMENTADAS TEMPORALMENTE (duplican tablas)
-    # "tenancy",          # Gestión de empresas y multi-tenancy
-    # "users",            # Usuarios y autenticación
-    # "clinic",           # Lógica de clínica dental
-    # "notifications",    # Sistema de notificaciones
+    
+    # ===================================
+    # NUEVA ESTRUCTURA MODULAR EN ESPAÑOL
+    # ===================================
+    "apps.inventario",               # Gestión de inventario (CU27) - NOMBRE SIMPLE
+    "apps.admin_dashboard",          # Dashboard administrativo (CU26) - NOMBRE SIMPLE
+    "apps.tratamientos",             # Planes de tratamiento y presupuestos - NOMBRE SIMPLE
+    "apps.comun",                    # Utilidades y permisos compartidos
+    "apps.citas",                    # Gestión de citas/consultas
+    "apps.auditoria",                # Bitácora y auditoría
+    "apps.autenticacion",            # Autenticación y seguridad
+    "apps.sistema_pagos",            # Sistema de pagos y facturación
+    "apps.profesionales",            # Odontólogos y staff
+    "apps.usuarios",                 # Gestión de usuarios
+    "apps.administracion_clinica",   # Administración general
+    "apps.historial_clinico",        # Historias clínicas
+    "apps.respaldos",                # Sistema de respaldos
+    
+    # ===================================
+    # APPS ANTIGUAS (A MIGRAR/ELIMINAR)
+    # ===================================
+    # "api",            # App monolítica antigua
+    # "no_show_policies",
+    # "chatbot",
+    # "tenancy",
+    # "users",
+    # "clinic",
+    # "notifications",
 ]
 
 # ------------------------------------
@@ -164,16 +183,14 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Health check middleware (debe ir antes de TenantMiddleware)
-    "api.middleware_health.HealthCheckMiddleware",
-    # Multi-tenancy: Identificar empresa (tenant)
-    "api.middleware_tenant.TenantMiddleware",
-    # DIAGNÓSTICO TEMPORAL: Verificar tenant en admin
-    "api.middleware_admin_diagnostic.AdminTenantDiagnosticMiddleware",
-    # Multi-tenancy: Enrutamiento dinámico (después de TenantMiddleware)
-    "dental_clinic_backend.middleware_routing.TenantRoutingMiddleware",
-    # Auditoría (después de todo)
-    # "users.middleware.AuditMiddleware",  # Migrar después
+    
+    # ===================================
+    # MIDDLEWARES DESACTIVADOS (Multi-tenancy removido)
+    # ===================================
+    # "api.middleware_health.HealthCheckMiddleware",
+    # "api.middleware_tenant.TenantMiddleware",
+    # "api.middleware_admin_diagnostic.AdminTenantDiagnosticMiddleware",
+    # "dental_clinic_backend.middleware_routing.TenantRoutingMiddleware",
 ]
 
 ROOT_URLCONF = "dental_clinic_backend.urls"
@@ -466,3 +483,17 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
+
+
+# ------------------------------------
+# Celery Configuration (CU17: Recordatorios Automáticos)
+# ------------------------------------
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Lima'  # Ajustar según tu zona horaria
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 100  # Reiniciar worker cada 100 tareas

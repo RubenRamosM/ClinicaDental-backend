@@ -1,0 +1,612 @@
+###############################################################################
+# 📋 FLUJO 5: FACTURACIÓN Y PAGOS (STRIPE + EFECTIVO)
+###############################################################################
+#
+# OBJETIVO: Probar sistema de facturación con pagos en efectivo y Stripe
+#
+# ESCENARIOS:
+#   1. Generar facturas desde presupuestos
+#   2. Pagos en efectivo
+#   3. Pagos con Stripe (tarjeta de crédito)
+#   4. Consultar historial de pagos
+#   5. Reembolsos y cancelaciones
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. PREPARACIÓN - LOGIN
+###############################################################################
+
+### 1.1. Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 1.2. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+@pacienteId = {{loginPaciente.response.body.usuario.id}}
+
+### 1.3. Login Odontólogo
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "maria.lopez@clinica.com",
+  "password": "odontologo123"
+}
+
+@odontologoToken = {{loginOdontologo.response.body.token}}
+@odontologoId = {{loginOdontologo.response.body.usuario.id}}
+
+###############################################################################
+# 2. CREAR PRESUPUESTO PARA FACTURAR
+###############################################################################
+
+### 2.1. Crear plan de tratamiento
+# @name crearPlan
+POST {{baseUrl}}/tratamientos/planes/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "cododontologo": {{odontologoId}},
+  "diagnostico": "Limpieza dental y fluorización",
+  "objetivos": "Prevención y mantenimiento",
+  "descripcion": "Plan de tratamiento preventivo",
+  "estado": "activo",
+  "prioridad": "media",
+  "fecha_inicio_estimada": "2025-11-05"
+}
+
+@planId = {{crearPlan.response.body.id}}
+
+### 2.2. Crear presupuesto aprobado
+# @name crearPresupuesto
+POST {{baseUrl}}/tratamientos/presupuestos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planId}},
+  "conceptos": [
+    {
+      "descripcion": "Limpieza dental profesional",
+      "cantidad": 1,
+      "precio_unitario": 80.00,
+      "subtotal": 80.00
+    },
+    {
+      "descripcion": "Aplicación de flúor",
+      "cantidad": 1,
+      "precio_unitario": 30.00,
+      "subtotal": 30.00
+    }
+  ],
+  "subtotal": 110.00,
+  "descuento": 10.00,
+  "impuestos": 0.00,
+  "total": 100.00,
+  "estado": "aprobado",
+  "validez_dias": 30,
+  "observaciones": "Presupuesto para tratamiento preventivo",
+  "notas_pago": "Pago en efectivo o tarjeta"
+}
+
+@presupuestoId = {{crearPresupuesto.response.body.id}}
+
+###############################################################################
+# 3. GENERAR FACTURA
+###############################################################################
+
+### 3.1. Admin genera factura desde presupuesto
+# @name crearFactura
+POST {{baseUrl}}/pagos/facturas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idpresupuesto": {{presupuestoId}},
+  "codpaciente": {{pacienteId}},
+  "tipo_comprobante": "factura",
+  "conceptos": [
+    {
+      "descripcion": "Limpieza dental profesional",
+      "cantidad": 1,
+      "precio_unitario": 80.00,
+      "subtotal": 80.00
+    },
+    {
+      "descripcion": "Aplicación de flúor",
+      "cantidad": 1,
+      "precio_unitario": 30.00,
+      "subtotal": 30.00
+    }
+  ],
+  "subtotal": 110.00,
+  "descuento": 10.00,
+  "impuestos": 0.00,
+  "total": 100.00,
+  "estado": "pendiente",
+  "observaciones": "Factura generada desde presupuesto aprobado"
+}
+
+@facturaId = {{crearFactura.response.body.id}}
+@numeroFactura = {{crearFactura.response.body.numero_factura}}
+
+### 3.2. Ver factura creada
+GET {{baseUrl}}/pagos/facturas/{{facturaId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 4. PAGO EN EFECTIVO
+###############################################################################
+
+### 4.1. Registrar pago en efectivo
+# @name pagoEfectivo
+POST {{baseUrl}}/pagos/pagos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idfactura": {{facturaId}},
+  "monto": 100.00,
+  "metodo_pago": "efectivo",
+  "estado": "completado",
+  "observaciones": "Pago en efectivo recibido el 03/11/2025"
+}
+
+@pagoEfectivoId = {{pagoEfectivo.response.body.id}}
+
+### 4.2. Verificar pago registrado
+GET {{baseUrl}}/pagos/pagos/{{pagoEfectivoId}}/
+Authorization: Token {{adminToken}}
+
+### 4.3. Verificar que factura se marcó como pagada
+GET {{baseUrl}}/pagos/facturas/{{facturaId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 5. CREAR SEGUNDA FACTURA PARA PAGO CON STRIPE
+###############################################################################
+
+### 5.1. Crear nuevo presupuesto
+# @name crearPresupuesto2
+POST {{baseUrl}}/tratamientos/presupuestos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planId}},
+  "conceptos": [
+    {
+      "descripcion": "Consulta de seguimiento",
+      "cantidad": 1,
+      "precio_unitario": 50.00,
+      "subtotal": 50.00
+    }
+  ],
+  "subtotal": 50.00,
+  "descuento": 0.00,
+  "impuestos": 0.00,
+  "total": 50.00,
+  "estado": "aprobado",
+  "validez_dias": 30
+}
+
+@presupuesto2Id = {{crearPresupuesto2.response.body.id}}
+
+### 5.2. Generar factura para Stripe
+# @name crearFactura2
+POST {{baseUrl}}/pagos/facturas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idpresupuesto": {{presupuesto2Id}},
+  "codpaciente": {{pacienteId}},
+  "tipo_comprobante": "factura",
+  "conceptos": [
+    {
+      "descripcion": "Consulta de seguimiento",
+      "cantidad": 1,
+      "precio_unitario": 50.00,
+      "subtotal": 50.00
+    }
+  ],
+  "subtotal": 50.00,
+  "descuento": 0.00,
+  "impuestos": 0.00,
+  "total": 50.00,
+  "estado": "pendiente"
+}
+
+@factura2Id = {{crearFactura2.response.body.id}}
+
+###############################################################################
+# 6. STRIPE - OBTENER CLAVE PÚBLICA
+###############################################################################
+
+### 6.1. Obtener clave pública de Stripe
+# @name obtenerClavePublica
+GET {{baseUrl}}/pagos/stripe/clave-publica/
+Authorization: Token {{pacienteToken}}
+
+@stripePublicKey = {{obtenerClavePublica.response.body.publishable_key}}
+
+###############################################################################
+# 7. STRIPE - CREAR PAYMENT INTENT
+###############################################################################
+
+### 7.1. Crear Payment Intent para la factura
+# @name crearPaymentIntent
+POST {{baseUrl}}/pagos/stripe/crear-payment-intent/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "idfactura": {{factura2Id}},
+  "monto": 50.00,
+  "descripcion": "Pago de factura - Consulta de seguimiento"
+}
+
+@clientSecret = {{crearPaymentIntent.response.body.client_secret}}
+@paymentIntentId = {{crearPaymentIntent.response.body.payment_intent_id}}
+
+### 7.2. Verificar Payment Intent creado
+GET {{baseUrl}}/pagos/stripe/payment-intent/{{paymentIntentId}}/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 8. STRIPE - SIMULAR CONFIRMACIÓN DE PAGO
+###############################################################################
+
+### 8.1. Confirmar pago con Stripe (simulado)
+# NOTA: En producción, esto se hace desde el frontend con Stripe.js
+# Aquí simulamos que el pago fue exitoso
+POST {{baseUrl}}/pagos/stripe/webhook/
+Content-Type: application/json
+
+{
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "{{paymentIntentId}}",
+      "amount": 5000,
+      "currency": "usd",
+      "status": "succeeded"
+    }
+  }
+}
+
+### 8.2. Registrar pago con Stripe en el sistema
+# @name pagoStripe
+POST {{baseUrl}}/pagos/pagos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idfactura": {{factura2Id}},
+  "monto": 50.00,
+  "metodo_pago": "tarjeta",
+  "estado": "completado",
+  "referencia_externa": "{{paymentIntentId}}",
+  "observaciones": "Pago procesado con Stripe"
+}
+
+@pagoStripeId = {{pagoStripe.response.body.id}}
+
+### 8.3. Verificar factura pagada
+GET {{baseUrl}}/pagos/facturas/{{factura2Id}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 9. LISTAR FACTURAS Y PAGOS
+###############################################################################
+
+### 9.1. Listar todas las facturas
+GET {{baseUrl}}/pagos/facturas/
+Authorization: Token {{adminToken}}
+
+### 9.2. Listar facturas pendientes
+GET {{baseUrl}}/pagos/facturas/?estado=pendiente
+Authorization: Token {{adminToken}}
+
+### 9.3. Listar facturas pagadas
+GET {{baseUrl}}/pagos/facturas/?estado=pagada
+Authorization: Token {{adminToken}}
+
+### 9.4. Facturas del paciente
+GET {{baseUrl}}/pagos/facturas/?codpaciente={{pacienteId}}
+Authorization: Token {{adminToken}}
+
+### 9.5. Paciente ve sus facturas
+GET {{baseUrl}}/pagos/facturas/mis-facturas/
+Authorization: Token {{pacienteToken}}
+
+### 9.6. Listar todos los pagos
+GET {{baseUrl}}/pagos/pagos/
+Authorization: Token {{adminToken}}
+
+### 9.7. Pagos de una factura específica
+GET {{baseUrl}}/pagos/pagos/?idfactura={{facturaId}}
+Authorization: Token {{adminToken}}
+
+### 9.8. Pagos por método (efectivo)
+GET {{baseUrl}}/pagos/pagos/?metodo_pago=efectivo
+Authorization: Token {{adminToken}}
+
+### 9.9. Pagos por método (tarjeta)
+GET {{baseUrl}}/pagos/pagos/?metodo_pago=tarjeta
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 10. FACTURA CON PAGOS PARCIALES
+###############################################################################
+
+### 10.1. Crear factura grande
+# @name crearFacturaGrande
+POST {{baseUrl}}/pagos/facturas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "tipo_comprobante": "factura",
+  "conceptos": [
+    {
+      "descripcion": "Tratamiento de conducto",
+      "cantidad": 1,
+      "precio_unitario": 500.00,
+      "subtotal": 500.00
+    }
+  ],
+  "subtotal": 500.00,
+  "descuento": 0.00,
+  "impuestos": 0.00,
+  "total": 500.00,
+  "estado": "pendiente"
+}
+
+@facturaGrandeId = {{crearFacturaGrande.response.body.id}}
+
+### 10.2. Primer pago parcial (50%)
+# @name pagoParcial1
+POST {{baseUrl}}/pagos/pagos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idfactura": {{facturaGrandeId}},
+  "monto": 250.00,
+  "metodo_pago": "efectivo",
+  "estado": "completado",
+  "observaciones": "Primer pago parcial - 50%"
+}
+
+@pagoParcial1Id = {{pagoParcial1.response.body.id}}
+
+### 10.3. Verificar factura parcialmente pagada
+GET {{baseUrl}}/pagos/facturas/{{facturaGrandeId}}/
+Authorization: Token {{adminToken}}
+
+### 10.4. Segundo pago parcial (25%)
+# @name pagoParcial2
+POST {{baseUrl}}/pagos/pagos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idfactura": {{facturaGrandeId}},
+  "monto": 125.00,
+  "metodo_pago": "tarjeta",
+  "estado": "completado",
+  "observaciones": "Segundo pago parcial - 25%"
+}
+
+@pagoParcial2Id = {{pagoParcial2.response.body.id}}
+
+### 10.5. Pago final (25%)
+POST {{baseUrl}}/pagos/pagos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idfactura": {{facturaGrandeId}},
+  "monto": 125.00,
+  "metodo_pago": "efectivo",
+  "estado": "completado",
+  "observaciones": "Pago final - 25%"
+}
+
+### 10.6. Verificar factura completamente pagada
+GET {{baseUrl}}/pagos/facturas/{{facturaGrandeId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 11. CANCELAR FACTURA
+###############################################################################
+
+### 11.1. Crear factura para cancelar
+# @name crearFacturaCancelar
+POST {{baseUrl}}/pagos/facturas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "tipo_comprobante": "factura",
+  "conceptos": [
+    {
+      "descripcion": "Servicio a cancelar",
+      "cantidad": 1,
+      "precio_unitario": 75.00,
+      "subtotal": 75.00
+    }
+  ],
+  "subtotal": 75.00,
+  "descuento": 0.00,
+  "impuestos": 0.00,
+  "total": 75.00,
+  "estado": "pendiente"
+}
+
+@facturaCancelarId = {{crearFacturaCancelar.response.body.id}}
+
+### 11.2. Cancelar factura
+POST {{baseUrl}}/pagos/facturas/{{facturaCancelarId}}/cancelar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "motivo": "Paciente canceló el tratamiento"
+}
+
+### 11.3. Verificar factura cancelada
+GET {{baseUrl}}/pagos/facturas/{{facturaCancelarId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 12. GENERAR REPORTE DE INGRESOS
+###############################################################################
+
+### 12.1. Reporte de pagos del día
+GET {{baseUrl}}/pagos/reportes/ingresos-diarios/?fecha=2025-11-03
+Authorization: Token {{adminToken}}
+
+### 12.2. Reporte mensual
+GET {{baseUrl}}/pagos/reportes/ingresos-mensuales/?mes=11&anio=2025
+Authorization: Token {{adminToken}}
+
+### 12.3. Total por método de pago
+GET {{baseUrl}}/pagos/reportes/por-metodo-pago/?fecha_inicio=2025-11-01&fecha_fin=2025-11-30
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 13. DESCARGAR FACTURA PDF
+###############################################################################
+
+### 13.1. Descargar factura en PDF
+GET {{baseUrl}}/pagos/facturas/{{facturaId}}/pdf/
+Authorization: Token {{pacienteToken}}
+
+### 13.2. Enviar factura por email
+POST {{baseUrl}}/pagos/facturas/{{facturaId}}/enviar-email/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "email_destino": "paciente1@test.com",
+  "mensaje": "Adjunto encontrará su factura"
+}
+
+###############################################################################
+# 14. STRIPE - LISTAR MÉTODOS DE PAGO
+###############################################################################
+
+### 14.1. Listar métodos de pago guardados del paciente
+GET {{baseUrl}}/pagos/stripe/metodos-pago/
+Authorization: Token {{pacienteToken}}
+
+### 14.2. Crear Customer en Stripe (si no existe)
+POST {{baseUrl}}/pagos/stripe/crear-customer/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "correo": "paciente1@test.com",
+  "nombre": "Juan Pérez"
+}
+
+###############################################################################
+# 15. EDGE CASES Y VALIDACIONES
+###############################################################################
+
+### 15.1. Intentar pagar más del total de la factura
+POST {{baseUrl}}/pagos/pagos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "idfactura": {{facturaId}},
+  "monto": 1000.00,
+  "metodo_pago": "efectivo",
+  "estado": "completado"
+}
+
+### 15.2. Paciente intenta crear factura (debe fallar)
+POST {{baseUrl}}/pagos/facturas/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "total": 100.00
+}
+
+### 15.3. Cancelar factura ya pagada (debe fallar)
+POST {{baseUrl}}/pagos/facturas/{{facturaId}}/cancelar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "motivo": "Intento de cancelar factura pagada"
+}
+
+### 15.4. Buscar factura por número
+GET {{baseUrl}}/pagos/facturas/?numero_factura={{numeroFactura}}
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 16. LOGOUT
+###############################################################################
+
+### 16.1. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+### 16.2. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+### 16.3. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Facturas generadas desde presupuestos
+# ✅ Pago en efectivo registrado correctamente
+# ✅ Pago con Stripe (Payment Intent) procesado
+# ✅ Factura marcada como pagada automáticamente
+# ✅ Pagos parciales funcionan correctamente
+# ✅ Factura cancelada con motivo
+# ✅ Reportes de ingresos generados
+# ✅ PDF de factura descargado
+# ✅ Métodos de pago de Stripe funcionan
+# ✅ Validaciones impiden pagos excesivos
+# ✅ Permisos correctos (paciente no puede crear facturas)
+# ✅ Búsqueda y filtrado funcionan
+#
+###############################################################################

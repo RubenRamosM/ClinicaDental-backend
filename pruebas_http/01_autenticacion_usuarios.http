@@ -1,0 +1,239 @@
+###############################################################################
+# 🟢 FLUJO 1: AUTENTICACIÓN Y GESTIÓN DE USUARIOS
+###############################################################################
+#
+# OBJETIVO: Probar login, logout, perfiles y gestión de usuarios
+#
+# ESCENARIOS:
+#   1. Login exitoso (Admin, Odontólogo, Paciente)
+#   2. Login fallido (credenciales incorrectas)
+#   3. Ver perfil del usuario autenticado
+#   4. Crear nuevo paciente
+#   5. Actualizar datos de usuario
+#   6. Logout
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. LOGIN EXITOSO - DIFERENTES ROLES
+###############################################################################
+
+### 1.1. Login como Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+@adminId = {{loginAdmin.response.body.usuario.id}}
+
+### 1.2. Login como Odontólogo
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "maria.lopez@clinica.com",
+  "password": "odontologo123"
+}
+
+@odontologoToken = {{loginOdontologo.response.body.token}}
+
+### 1.3. Login como Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+
+###############################################################################
+# 2. LOGIN FALLIDO - CREDENCIALES INCORRECTAS
+###############################################################################
+
+### 2.1. Login con email incorrecto (debe fallar)
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "noexiste@test.com",
+  "password": "123456"
+}
+
+### 2.2. Login con contraseña incorrecta (debe fallar)
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "incorrecta"
+}
+
+###############################################################################
+# 3. VER PERFIL DEL USUARIO AUTENTICADO
+###############################################################################
+
+### 3.1. Ver perfil como Admin
+GET {{baseUrl}}/usuarios/perfil/
+Authorization: Token {{adminToken}}
+
+### 3.2. Ver perfil como Odontólogo
+GET {{baseUrl}}/usuarios/perfil/
+Authorization: Token {{odontologoToken}}
+
+### 3.3. Ver perfil como Paciente
+GET {{baseUrl}}/usuarios/perfil/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 4. CREAR NUEVO PACIENTE
+###############################################################################
+
+### 4.1. Admin crea nuevo paciente
+# @name nuevoPaciente
+POST {{baseUrl}}/usuarios/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "nombre": "Carlos",
+  "apellido": "Mendoza",
+  "correoelectronico": "carlos.mendoza@test.com",
+  "telefono": "77777777",
+  "fechanacimiento": "1990-05-15",
+  "direccion": "Av. Principal 123",
+  "ci": "7777777",
+  "password": "paciente123",
+  "idtipousuario": 3
+}
+
+@nuevoPacienteId = {{nuevoPaciente.response.body.codusuario}}
+
+### 4.2. Verificar que el paciente se creó
+GET {{baseUrl}}/usuarios/{{nuevoPacienteId}}/
+Authorization: Token {{adminToken}}
+
+### 4.3. Login con el nuevo paciente
+# @name loginNuevoPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "carlos.mendoza@test.com",
+  "password": "paciente123"
+}
+
+@nuevoPacienteToken = {{loginNuevoPaciente.response.body.token}}
+
+###############################################################################
+# 5. ACTUALIZAR DATOS DE USUARIO
+###############################################################################
+
+### 5.1. Paciente actualiza su teléfono
+PATCH {{baseUrl}}/usuarios/{{nuevoPacienteId}}/
+Content-Type: application/json
+Authorization: Token {{nuevoPacienteToken}}
+
+{
+  "telefono": "88888888"
+}
+
+### 5.2. Verificar cambio
+GET {{baseUrl}}/usuarios/{{nuevoPacienteId}}/
+Authorization: Token {{nuevoPacienteToken}}
+
+###############################################################################
+# 6. LISTAR USUARIOS (SOLO ADMIN)
+###############################################################################
+
+### 6.1. Admin lista todos los usuarios
+GET {{baseUrl}}/usuarios/
+Authorization: Token {{adminToken}}
+
+### 6.2. Admin lista solo pacientes
+GET {{baseUrl}}/usuarios/?idtipousuario=3
+Authorization: Token {{adminToken}}
+
+### 6.3. Paciente intenta listar usuarios (debe fallar o ver solo su perfil)
+GET {{baseUrl}}/usuarios/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 7. CAMBIAR CONTRASEÑA
+###############################################################################
+
+### 7.1. Paciente cambia su contraseña
+POST {{baseUrl}}/auth/cambiar-password/
+Content-Type: application/json
+Authorization: Token {{nuevoPacienteToken}}
+
+{
+  "password_actual": "paciente123",
+  "password_nuevo": "nuevapassword123"
+}
+
+### 7.2. Logout del paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{nuevoPacienteToken}}
+
+### 7.3. Login con nueva contraseña
+# @name loginNuevaPassword
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "carlos.mendoza@test.com",
+  "password": "nuevapassword123"
+}
+
+###############################################################################
+# 8. LOGOUT - TODOS LOS ROLES
+###############################################################################
+
+### 8.1. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+### 8.2. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+### 8.3. Logout Paciente original
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 9. INTENTAR ACCEDER SIN TOKEN (debe fallar)
+###############################################################################
+
+### 9.1. Intentar ver perfil sin autenticación
+GET {{baseUrl}}/usuarios/perfil/
+
+### 9.2. Intentar listar usuarios sin autenticación
+GET {{baseUrl}}/usuarios/
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Login exitoso para Admin, Odontólogo y Paciente
+# ✅ Login fallido con credenciales incorrectas (401)
+# ✅ Perfiles obtenidos correctamente según rol
+# ✅ Nuevo paciente creado exitosamente
+# ✅ Login del nuevo paciente funciona
+# ✅ Actualización de datos exitosa
+# ✅ Cambio de contraseña funciona
+# ✅ Logout cierra sesión correctamente
+# ✅ Acceso sin token denegado (401)
+#
+###############################################################################

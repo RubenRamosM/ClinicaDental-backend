@@ -1,0 +1,336 @@
+###############################################################################
+# 📋 FLUJO 3: HISTORIALES CLÍNICOS Y ODONTOGRAMAS
+###############################################################################
+#
+# OBJETIVO: Probar creación y gestión de historiales clínicos
+#
+# ESCENARIOS:
+#   1. Odontólogo crea historial clínico para paciente
+#   2. Registrar odontograma
+#   3. Actualizar historial
+#   4. Ver historiales de paciente
+#   5. Subir documentos clínicos
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. PREPARACIÓN - LOGIN
+###############################################################################
+
+### 1.1. Login Odontólogo
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "maria.lopez@clinica.com",
+  "password": "odontologo123"
+}
+
+@odontologoToken = {{loginOdontologo.response.body.token}}
+@odontologoId = {{loginOdontologo.response.body.usuario.id}}
+
+### 1.2. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+@pacienteId = {{loginPaciente.response.body.usuario.id}}
+
+### 1.3. Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+
+###############################################################################
+# 2. CREAR CONSULTA PREVIA
+###############################################################################
+
+### 2.1. Admin crea consulta para el paciente
+# @name crearConsulta
+POST {{baseUrl}}/citas/consultas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "fecha": "2025-11-03",
+  "codpaciente": {{pacienteId}},
+  "cododontologo": {{odontologoId}},
+  "idhorario": 1,
+  "idtipoconsulta": 1,
+  "idestadoconsulta": 2,
+  "estado": "confirmada",
+  "tipo_consulta": "primera_vez",
+  "motivo_consulta": "Primera consulta - evaluación general"
+}
+
+@consultaId = {{crearConsulta.response.body.id}}
+
+###############################################################################
+# 3. CREAR HISTORIAL CLÍNICO
+###############################################################################
+
+### 3.1. Odontólogo crea historial clínico
+# @name crearHistorial
+POST {{baseUrl}}/historial-clinico/historiales/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "idconsulta": {{consultaId}},
+  "antecedentes_medicos": "Paciente sin alergias conocidas. No toma medicación regular.",
+  "antecedentes_dentales": "Primera visita al dentista en 2 años. Última limpieza en 2023.",
+  "motivo_consulta": "Dolor leve en molar inferior derecho",
+  "diagnostico": "Caries en pieza 46. Gingivitis leve.",
+  "tratamiento_realizado": "Evaluación inicial. Se programa obturación.",
+  "observaciones": "Paciente cooperativo. Se recomienda mejorar técnica de cepillado."
+}
+
+@historialId = {{crearHistorial.response.body.id}}
+
+### 3.2. Verificar historial creado
+GET {{baseUrl}}/historial-clinico/historiales/{{historialId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 4. LISTAR HISTORIALES
+###############################################################################
+
+### 4.1. Odontólogo lista todos los historiales
+GET {{baseUrl}}/historial-clinico/historiales/
+Authorization: Token {{odontologoToken}}
+
+### 4.2. Listar historiales de un paciente específico
+GET {{baseUrl}}/historial-clinico/historiales/?codpaciente={{pacienteId}}
+Authorization: Token {{odontologoToken}}
+
+### 4.3. Paciente ve su propio historial
+GET {{baseUrl}}/historial-clinico/historiales/mis-historiales/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 5. ACTUALIZAR HISTORIAL
+###############################################################################
+
+### 5.1. Odontólogo actualiza el historial
+PATCH {{baseUrl}}/historial-clinico/historiales/{{historialId}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "diagnostico": "Caries en pieza 46. Gingivitis moderada. Placa bacteriana presente.",
+  "observaciones": "Paciente cooperativo. Se recomienda mejorar técnica de cepillado. Usar hilo dental diariamente."
+}
+
+### 5.2. Verificar actualización
+GET {{baseUrl}}/historial-clinico/historiales/{{historialId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 6. CREAR ODONTOGRAMA
+###############################################################################
+
+### 6.1. Odontólogo crea odontograma
+# @name crearOdontograma
+POST {{baseUrl}}/historial-clinico/odontogramas/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idhistorialclinico": {{historialId}},
+  "datos_odontograma": {
+    "piezas": {
+      "18": {"estado": "sano", "observaciones": ""},
+      "17": {"estado": "sano", "observaciones": ""},
+      "16": {"estado": "obturado", "observaciones": "Obturación antigua en buen estado"},
+      "15": {"estado": "sano", "observaciones": ""},
+      "14": {"estado": "sano", "observaciones": ""},
+      "13": {"estado": "sano", "observaciones": ""},
+      "12": {"estado": "sano", "observaciones": ""},
+      "11": {"estado": "sano", "observaciones": ""},
+      "21": {"estado": "sano", "observaciones": ""},
+      "22": {"estado": "sano", "observaciones": ""},
+      "23": {"estado": "sano", "observaciones": ""},
+      "24": {"estado": "sano", "observaciones": ""},
+      "25": {"estado": "sano", "observaciones": ""},
+      "26": {"estado": "sano", "observaciones": ""},
+      "27": {"estado": "sano", "observaciones": ""},
+      "28": {"estado": "ausente", "observaciones": "Muela del juicio extraída"},
+      "38": {"estado": "sano", "observaciones": ""},
+      "37": {"estado": "sano", "observaciones": ""},
+      "36": {"estado": "sano", "observaciones": ""},
+      "35": {"estado": "sano", "observaciones": ""},
+      "34": {"estado": "sano", "observaciones": ""},
+      "33": {"estado": "sano", "observaciones": ""},
+      "32": {"estado": "sano", "observaciones": ""},
+      "31": {"estado": "sano", "observaciones": ""},
+      "41": {"estado": "sano", "observaciones": ""},
+      "42": {"estado": "sano", "observaciones": ""},
+      "43": {"estado": "sano", "observaciones": ""},
+      "44": {"estado": "sano", "observaciones": ""},
+      "45": {"estado": "sano", "observaciones": ""},
+      "46": {"estado": "caries", "observaciones": "Caries oclusal profunda"},
+      "47": {"estado": "sano", "observaciones": ""},
+      "48": {"estado": "sano", "observaciones": ""}
+    }
+  },
+  "observaciones": "Odontograma inicial. Pieza 46 requiere tratamiento urgente."
+}
+
+@odontogramaId = {{crearOdontograma.response.body.id}}
+
+### 6.2. Ver odontograma creado
+GET {{baseUrl}}/historial-clinico/odontogramas/{{odontogramaId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 7. LISTAR ODONTOGRAMAS
+###############################################################################
+
+### 7.1. Listar todos los odontogramas
+GET {{baseUrl}}/historial-clinico/odontogramas/
+Authorization: Token {{odontologoToken}}
+
+### 7.2. Listar odontogramas de un historial específico
+GET {{baseUrl}}/historial-clinico/odontogramas/?idhistorialclinico={{historialId}}
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 8. ACTUALIZAR ODONTOGRAMA
+###############################################################################
+
+### 8.1. Actualizar odontograma (después de tratamiento)
+PATCH {{baseUrl}}/historial-clinico/odontogramas/{{odontogramaId}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "datos_odontograma": {
+    "piezas": {
+      "46": {"estado": "obturado", "observaciones": "Obturación realizada el 03/11/2025"}
+    }
+  },
+  "observaciones": "Actualizado post-tratamiento. Pieza 46 restaurada exitosamente."
+}
+
+### 8.2. Verificar actualización
+GET {{baseUrl}}/historial-clinico/odontogramas/{{odontogramaId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 9. DOCUMENTOS CLÍNICOS (si está implementado)
+###############################################################################
+
+### 9.1. Listar documentos del historial
+GET {{baseUrl}}/historial-clinico/documentos/?idhistorialclinico={{historialId}}
+Authorization: Token {{odontologoToken}}
+
+### 9.2. Crear documento clínico (texto)
+# @name crearDocumento
+POST {{baseUrl}}/historial-clinico/documentos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idhistorialclinico": {{historialId}},
+  "tipo_documento": "receta",
+  "titulo": "Receta - Analgésicos post-tratamiento",
+  "contenido": "Ibuprofeno 400mg cada 8 horas por 3 días. Tomar con alimentos.",
+  "observaciones": "Recetado después de obturación pieza 46"
+}
+
+@documentoId = {{crearDocumento.response.body.id}}
+
+### 9.3. Ver documento creado
+GET {{baseUrl}}/historial-clinico/documentos/{{documentoId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 10. BUSCAR Y FILTRAR
+###############################################################################
+
+### 10.1. Buscar historiales por diagnóstico
+GET {{baseUrl}}/historial-clinico/historiales/?search=caries
+Authorization: Token {{odontologoToken}}
+
+### 10.2. Filtrar por fecha
+GET {{baseUrl}}/historial-clinico/historiales/?fecha_desde=2025-11-01&fecha_hasta=2025-11-30
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 11. PERMISOS - PACIENTE
+###############################################################################
+
+### 11.1. Paciente intenta crear historial (debe fallar)
+POST {{baseUrl}}/historial-clinico/historiales/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "antecedentes_medicos": "Intento no autorizado"
+}
+
+### 11.2. Paciente ve su propio historial (debe funcionar)
+GET {{baseUrl}}/historial-clinico/historiales/{{historialId}}/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 12. ESTADÍSTICAS Y RESÚMENES
+###############################################################################
+
+### 12.1. Obtener resumen del historial
+GET {{baseUrl}}/historial-clinico/historiales/{{historialId}}/resumen/
+Authorization: Token {{odontologoToken}}
+
+### 12.2. Ver última consulta del paciente
+GET {{baseUrl}}/historial-clinico/historiales/?codpaciente={{pacienteId}}&ordering=-fecha_creacion&limit=1
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 13. LOGOUT
+###############################################################################
+
+### 13.1. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+### 13.2. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+### 13.3. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Historial clínico creado con todos los campos
+# ✅ Odontograma registrado con 32 piezas
+# ✅ Actualización de historial funciona
+# ✅ Actualización de odontograma después de tratamiento
+# ✅ Documentos clínicos adjuntados
+# ✅ Listado y filtrado funcionan
+# ✅ Paciente ve solo su historial
+# ✅ Paciente no puede crear historiales
+# ✅ Búsqueda por diagnóstico funciona
+#
+###############################################################################

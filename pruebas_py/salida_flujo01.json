@@ -1,0 +1,101 @@
+{
+  "flujo": {
+    "numero": 1,
+    "nombre": "Autenticacion y Gestion de Usuarios",
+    "descripcion": "Resultados de la ejecucion del flujo 01"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T18:44:15.780461",
+    "fin": "2025-11-03T18:44:55.723918",
+    "duracion_segundos": 39.94,
+    "fecha_legible": "03/11/2025 18:44:15"
+  },
+  "estadisticas": {
+    "total_secciones": 6,
+    "secciones_exitosas": 6,
+    "secciones_fallidas": 0,
+    "tasa_exito_porcentaje": 100.0,
+    "total_errores": 0,
+    "total_datos_creados": 1
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Registro de nuevo usuario",
+      "exito": true,
+      "timestamp": "2025-11-03T18:44:18.378872",
+      "detalles": {
+        "correo": "nuevo.usuario.20251103184415@email.com",
+        "tipo_usuario": "Paciente"
+      }
+    },
+    {
+      "numero": 2,
+      "nombre": "Login de diferentes roles",
+      "exito": true,
+      "timestamp": "2025-11-03T18:44:26.067271",
+      "detalles": {
+        "roles_autenticados": [
+          "Paciente",
+          "Odontologo",
+          "Admin"
+        ]
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Ver perfiles de usuario",
+      "exito": true,
+      "timestamp": "2025-11-03T18:44:34.606945",
+      "detalles": {
+        "perfiles_consultados": 4
+      }
+    },
+    {
+      "numero": 4,
+      "nombre": "Actualizar datos de perfil",
+      "exito": true,
+      "timestamp": "2025-11-03T18:44:38.842213",
+      "detalles": {
+        "campo_actualizado": "telefono",
+        "nuevo_valor": "77777777"
+      }
+    },
+    {
+      "numero": 5,
+      "nombre": "Cambio de contraseña",
+      "exito": true,
+      "timestamp": "2025-11-03T18:44:47.322849",
+      "detalles": {
+        "usuario": "Odontologo",
+        "restaurada": true
+      }
+    },
+    {
+      "numero": 6,
+      "nombre": "Cerrar sesión (Logout)",
+      "exito": true,
+      "timestamp": "2025-11-03T18:44:55.719767",
+      "detalles": {
+        "usuarios_deslogueados": 3,
+        "token_invalidado": true
+      }
+    }
+  ],
+  "datos_creados": {
+    "usuario": [
+      {
+        "id": "nuevo.usuario.20251103184415@email.com",
+        "datos": {
+          "rol": "Paciente"
+        },
+        "timestamp": "2025-11-03T18:44:18.378884"
+      }
+    ]
+  },
+  "errores": [],
+  "resumen": {
+    "estado": "EXITOSO",
+    "mensaje": "Todas las 6 secciones ejecutadas exitosamente"
+  }
+}

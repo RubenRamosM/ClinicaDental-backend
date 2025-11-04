@@ -1,0 +1,81 @@
+{
+  "flujo": {
+    "numero": 10,
+    "nombre": "Stripe - Presupuestos",
+    "descripcion": "Resultados de la ejecucion del flujo 10"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T20:36:48.359355",
+    "fin": "2025-11-03T20:37:00.975677",
+    "duracion_segundos": 12.62,
+    "fecha_legible": "03/11/2025 20:36:48"
+  },
+  "estadisticas": {
+    "total_secciones": 5,
+    "secciones_exitosas": 4,
+    "secciones_fallidas": 1,
+    "tasa_exito_porcentaje": 80.0,
+    "total_errores": 0,
+    "total_datos_creados": 0
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Autenticacion",
+      "exito": true,
+      "timestamp": "2025-11-03T20:36:53.497282",
+      "detalles": {
+        "admin_autenticado": true,
+        "paciente_autenticado": true
+      }
+    },
+    {
+      "numero": 2,
+      "nombre": "Listar presupuestos",
+      "exito": true,
+      "timestamp": "2025-11-03T20:36:55.679630",
+      "detalles": {
+        "presupuesto_id": 164,
+        "total": "400.0",
+        "estado": "pendiente"
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Payment Intent",
+      "exito": true,
+      "timestamp": "2025-11-03T20:36:58.825379",
+      "detalles": {
+        "pago_id": 18,
+        "codigo_pago": "PRES-C0F0DF61",
+        "monto": "400.0",
+        "presupuesto_id": 164
+      }
+    },
+    {
+      "numero": 4,
+      "nombre": "Confirmar pago",
+      "exito": true,
+      "timestamp": "2025-11-03T20:36:58.878089",
+      "detalles": {
+        "pago_id": 18
+      }
+    },
+    {
+      "numero": 5,
+      "nombre": "Aprobar presupuesto",
+      "exito": false,
+      "timestamp": "2025-11-03T20:37:00.975669",
+      "detalles": {
+        "pago_id": 18,
+        "presupuesto_id": null
+      }
+    }
+  ],
+  "datos_creados": {},
+  "errores": [],
+  "resumen": {
+    "estado": "CON_ERRORES",
+    "mensaje": "4 secciones exitosas, 1 con errores"
+  }
+}

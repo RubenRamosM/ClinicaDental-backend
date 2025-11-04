@@ -1,0 +1,557 @@
+###############################################################################
+# 📋 FLUJO 4: TRATAMIENTOS Y PRESUPUESTOS
+###############################################################################
+#
+# OBJETIVO: Probar creación y gestión de tratamientos odontológicos y presupuestos
+#
+# ESCENARIOS:
+#   1. Crear plan de tratamiento
+#   2. Generar presupuesto
+#   3. Aprobar/rechazar presupuestos
+#   4. Actualizar tratamientos
+#   5. Consultar estados y evolución
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. PREPARACIÓN - LOGIN
+###############################################################################
+
+### 1.1. Login Odontólogo
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "maria.lopez@clinica.com",
+  "password": "odontologo123"
+}
+
+@odontologoToken = {{loginOdontologo.response.body.token}}
+@odontologoId = {{loginOdontologo.response.body.usuario.id}}
+
+### 1.2. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+@pacienteId = {{loginPaciente.response.body.usuario.id}}
+
+### 1.3. Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+
+###############################################################################
+# 2. LISTAR SERVICIOS DISPONIBLES
+###############################################################################
+
+### 2.1. Listar todos los servicios
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{odontologoToken}}
+
+### 2.2. Listar servicios activos
+GET {{baseUrl}}/administracion/servicios/?activo=true
+Authorization: Token {{odontologoToken}}
+
+### 2.3. Buscar servicio específico
+# @name buscarServicio
+GET {{baseUrl}}/administracion/servicios/?search=obturación
+Authorization: Token {{odontologoToken}}
+
+### 2.4. Listar combos de servicios
+GET {{baseUrl}}/administracion/combos-servicios/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 3. CREAR PLAN DE TRATAMIENTO
+###############################################################################
+
+### 3.1. Odontólogo crea plan de tratamiento
+# @name crearPlanTratamiento
+POST {{baseUrl}}/tratamientos/planes/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "cododontologo": {{odontologoId}},
+  "diagnostico": "Caries en pieza 46 y gingivitis moderada",
+  "objetivos": "1. Restaurar pieza 46\n2. Mejorar salud periodontal\n3. Prevención",
+  "descripcion": "Plan de tratamiento integral para restauración y prevención",
+  "estado": "propuesto",
+  "prioridad": "alta",
+  "fecha_inicio_estimada": "2025-11-10",
+  "duracion_estimada_dias": 30,
+  "observaciones": "Paciente requiere seguimiento cercano por gingivitis"
+}
+
+@planTratamientoId = {{crearPlanTratamiento.response.body.id}}
+
+### 3.2. Ver plan creado
+GET {{baseUrl}}/tratamientos/planes/{{planTratamientoId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 4. AGREGAR TRATAMIENTOS AL PLAN
+###############################################################################
+
+### 4.1. Agregar tratamiento 1: Obturación
+# @name crearTratamiento1
+POST {{baseUrl}}/tratamientos/tratamientos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "idservicio": 1,
+  "pieza_dental": "46",
+  "descripcion": "Obturación con resina compuesta en pieza 46",
+  "estado": "pendiente",
+  "sesiones_requeridas": 1,
+  "sesiones_completadas": 0,
+  "fecha_inicio_estimada": "2025-11-10",
+  "observaciones": "Caries oclusal profunda, requiere anestesia local"
+}
+
+@tratamiento1Id = {{crearTratamiento1.response.body.id}}
+
+### 4.2. Agregar tratamiento 2: Limpieza Dental
+# @name crearTratamiento2
+POST {{baseUrl}}/tratamientos/tratamientos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "idservicio": 2,
+  "descripcion": "Limpieza dental profunda para tratar gingivitis",
+  "estado": "pendiente",
+  "sesiones_requeridas": 1,
+  "sesiones_completadas": 0,
+  "fecha_inicio_estimada": "2025-11-15",
+  "observaciones": "Incluye profilaxis y aplicación de flúor"
+}
+
+@tratamiento2Id = {{crearTratamiento2.response.body.id}}
+
+### 4.3. Agregar tratamiento 3: Control Periódico
+# @name crearTratamiento3
+POST {{baseUrl}}/tratamientos/tratamientos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "idservicio": 3,
+  "descripcion": "Control post-tratamiento",
+  "estado": "pendiente",
+  "sesiones_requeridas": 1,
+  "sesiones_completadas": 0,
+  "fecha_inicio_estimada": "2025-12-01",
+  "observaciones": "Verificar evolución de gingivitis y obturación"
+}
+
+@tratamiento3Id = {{crearTratamiento3.response.body.id}}
+
+###############################################################################
+# 5. LISTAR TRATAMIENTOS
+###############################################################################
+
+### 5.1. Listar todos los tratamientos
+GET {{baseUrl}}/tratamientos/tratamientos/
+Authorization: Token {{odontologoToken}}
+
+### 5.2. Listar tratamientos del plan
+GET {{baseUrl}}/tratamientos/tratamientos/?idplan={{planTratamientoId}}
+Authorization: Token {{odontologoToken}}
+
+### 5.3. Filtrar por estado
+GET {{baseUrl}}/tratamientos/tratamientos/?estado=pendiente
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 6. GENERAR PRESUPUESTO
+###############################################################################
+
+### 6.1. Odontólogo genera presupuesto para el plan
+# @name crearPresupuesto
+POST {{baseUrl}}/tratamientos/presupuestos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "conceptos": [
+    {
+      "descripcion": "Obturación con resina - Pieza 46",
+      "cantidad": 1,
+      "precio_unitario": 150.00,
+      "subtotal": 150.00
+    },
+    {
+      "descripcion": "Limpieza dental profunda",
+      "cantidad": 1,
+      "precio_unitario": 80.00,
+      "subtotal": 80.00
+    },
+    {
+      "descripcion": "Control post-tratamiento",
+      "cantidad": 1,
+      "precio_unitario": 30.00,
+      "subtotal": 30.00
+    }
+  ],
+  "subtotal": 260.00,
+  "descuento": 10.00,
+  "impuestos": 0.00,
+  "total": 250.00,
+  "estado": "pendiente",
+  "validez_dias": 30,
+  "observaciones": "Presupuesto válido por 30 días. Descuento del 3.8% aplicado.",
+  "notas_pago": "Se acepta pago en efectivo o tarjeta. Posibilidad de financiamiento."
+}
+
+@presupuestoId = {{crearPresupuesto.response.body.id}}
+
+### 6.2. Ver presupuesto creado
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 7. LISTAR PRESUPUESTOS
+###############################################################################
+
+### 7.1. Listar todos los presupuestos
+GET {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoToken}}
+
+### 7.2. Filtrar por estado
+GET {{baseUrl}}/tratamientos/presupuestos/?estado=pendiente
+Authorization: Token {{odontologoToken}}
+
+### 7.3. Presupuestos del plan
+GET {{baseUrl}}/tratamientos/presupuestos/?idplan={{planTratamientoId}}
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 8. PACIENTE VE Y APRUEBA PRESUPUESTO
+###############################################################################
+
+### 8.1. Paciente ve sus presupuestos
+GET {{baseUrl}}/tratamientos/presupuestos/mis-presupuestos/
+Authorization: Token {{pacienteToken}}
+
+### 8.2. Paciente ve detalle del presupuesto
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/
+Authorization: Token {{pacienteToken}}
+
+### 8.3. Paciente aprueba el presupuesto
+POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/aprobar/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "comentarios": "Acepto el tratamiento. Pagaré en efectivo."
+}
+
+### 8.4. Verificar estado actualizado
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 9. ACTUALIZAR PLAN DE TRATAMIENTO
+###############################################################################
+
+### 9.1. Odontólogo activa el plan (después de aprobación)
+PATCH {{baseUrl}}/tratamientos/planes/{{planTratamientoId}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "estado": "activo",
+  "fecha_inicio": "2025-11-10",
+  "observaciones": "Plan aprobado por paciente. Inicio programado para el 10/11/2025."
+}
+
+### 9.2. Verificar plan actualizado
+GET {{baseUrl}}/tratamientos/planes/{{planTratamientoId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 10. ACTUALIZAR TRATAMIENTOS (PROGRESO)
+###############################################################################
+
+### 10.1. Iniciar tratamiento 1 (Obturación)
+PATCH {{baseUrl}}/tratamientos/tratamientos/{{tratamiento1Id}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "estado": "en_progreso",
+  "fecha_inicio": "2025-11-10"
+}
+
+### 10.2. Completar tratamiento 1
+PATCH {{baseUrl}}/tratamientos/tratamientos/{{tratamiento1Id}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "estado": "completado",
+  "sesiones_completadas": 1,
+  "fecha_fin": "2025-11-10",
+  "observaciones": "Obturación realizada exitosamente. Sin complicaciones."
+}
+
+### 10.3. Verificar tratamiento completado
+GET {{baseUrl}}/tratamientos/tratamientos/{{tratamiento1Id}}/
+Authorization: Token {{odontologoToken}}
+
+### 10.4. Iniciar y completar tratamiento 2 (Limpieza)
+PATCH {{baseUrl}}/tratamientos/tratamientos/{{tratamiento2Id}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "estado": "completado",
+  "fecha_inicio": "2025-11-15",
+  "fecha_fin": "2025-11-15",
+  "sesiones_completadas": 1,
+  "observaciones": "Limpieza dental realizada. Mejoría notable en salud gingival."
+}
+
+###############################################################################
+# 11. CREAR PRESUPUESTO ADICIONAL (NUEVO TRATAMIENTO)
+###############################################################################
+
+### 11.1. Crear nuevo tratamiento no planificado
+# @name crearTratamientoExtra
+POST {{baseUrl}}/tratamientos/tratamientos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "idservicio": 4,
+  "pieza_dental": "47",
+  "descripcion": "Extracción de muela del juicio - Pieza 47",
+  "estado": "pendiente",
+  "sesiones_requeridas": 1,
+  "sesiones_completadas": 0,
+  "observaciones": "Muela semi-impactada, requiere cirugía menor"
+}
+
+@tratamientoExtraId = {{crearTratamientoExtra.response.body.id}}
+
+### 11.2. Generar presupuesto adicional
+# @name crearPresupuestoExtra
+POST {{baseUrl}}/tratamientos/presupuestos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "conceptos": [
+    {
+      "descripcion": "Extracción muela del juicio - Pieza 47",
+      "cantidad": 1,
+      "precio_unitario": 200.00,
+      "subtotal": 200.00
+    },
+    {
+      "descripcion": "Radiografía panorámica",
+      "cantidad": 1,
+      "precio_unitario": 50.00,
+      "subtotal": 50.00
+    }
+  ],
+  "subtotal": 250.00,
+  "descuento": 0.00,
+  "impuestos": 0.00,
+  "total": 250.00,
+  "estado": "pendiente",
+  "validez_dias": 15,
+  "observaciones": "Presupuesto para tratamiento adicional no contemplado en plan original.",
+  "notas_pago": "Tratamiento urgente, se recomienda realizar en las próximas 2 semanas."
+}
+
+@presupuestoExtraId = {{crearPresupuestoExtra.response.body.id}}
+
+### 11.3. Paciente rechaza presupuesto adicional
+POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoExtraId}}/rechazar/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "comentarios": "Prefiero postponer este tratamiento para el próximo mes."
+}
+
+### 11.4. Verificar rechazo
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoExtraId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 12. CONSULTAR PROGRESO DEL PLAN
+###############################################################################
+
+### 12.1. Ver plan completo con todos los tratamientos
+GET {{baseUrl}}/tratamientos/planes/{{planTratamientoId}}/
+Authorization: Token {{odontologoToken}}
+
+### 12.2. Ver solo tratamientos completados
+GET {{baseUrl}}/tratamientos/tratamientos/?idplan={{planTratamientoId}}&estado=completado
+Authorization: Token {{odontologoToken}}
+
+### 12.3. Ver solo tratamientos pendientes
+GET {{baseUrl}}/tratamientos/tratamientos/?idplan={{planTratamientoId}}&estado=pendiente
+Authorization: Token {{odontologoToken}}
+
+### 12.4. Paciente ve su plan de tratamiento
+GET {{baseUrl}}/tratamientos/planes/mis-planes/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 13. COMPLETAR PLAN DE TRATAMIENTO
+###############################################################################
+
+### 13.1. Completar último tratamiento pendiente
+PATCH {{baseUrl}}/tratamientos/tratamientos/{{tratamiento3Id}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "estado": "completado",
+  "fecha_inicio": "2025-12-01",
+  "fecha_fin": "2025-12-01",
+  "sesiones_completadas": 1,
+  "observaciones": "Control realizado. Obturación en buen estado. Gingivitis controlada. Alta médica."
+}
+
+### 13.2. Marcar plan como completado
+PATCH {{baseUrl}}/tratamientos/planes/{{planTratamientoId}}/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "estado": "completado",
+  "fecha_fin": "2025-12-01",
+  "observaciones": "Plan de tratamiento completado exitosamente. Paciente dado de alta."
+}
+
+### 13.3. Verificar plan completado
+GET {{baseUrl}}/tratamientos/planes/{{planTratamientoId}}/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 14. ESTADÍSTICAS Y REPORTES
+###############################################################################
+
+### 14.1. Listar todos los planes del paciente
+GET {{baseUrl}}/tratamientos/planes/?codpaciente={{pacienteId}}
+Authorization: Token {{odontologoToken}}
+
+### 14.2. Buscar tratamientos por pieza dental
+GET {{baseUrl}}/tratamientos/tratamientos/?pieza_dental=46
+Authorization: Token {{odontologoToken}}
+
+### 14.3. Presupuestos aprobados
+GET {{baseUrl}}/tratamientos/presupuestos/?estado=aprobado
+Authorization: Token {{odontologoToken}}
+
+### 14.4. Total de presupuestos pendientes
+GET {{baseUrl}}/tratamientos/presupuestos/?estado=pendiente
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 15. EDGE CASES
+###############################################################################
+
+### 15.1. Paciente intenta crear plan de tratamiento (debe fallar)
+POST {{baseUrl}}/tratamientos/planes/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "codpaciente": {{pacienteId}},
+  "diagnostico": "Intento no autorizado"
+}
+
+### 15.2. Crear presupuesto con total incorrecto (validación)
+POST {{baseUrl}}/tratamientos/presupuestos/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "idplan": {{planTratamientoId}},
+  "conceptos": [
+    {
+      "descripcion": "Test",
+      "cantidad": 1,
+      "precio_unitario": 100.00,
+      "subtotal": 100.00
+    }
+  ],
+  "subtotal": 100.00,
+  "descuento": 0.00,
+  "impuestos": 0.00,
+  "total": 50.00
+}
+
+### 15.3. Aprobar presupuesto ya aprobado
+POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/aprobar/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "comentarios": "Intento de doble aprobación"
+}
+
+###############################################################################
+# 16. LOGOUT
+###############################################################################
+
+### 16.1. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+### 16.2. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+### 16.3. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Plan de tratamiento creado correctamente
+# ✅ Múltiples tratamientos agregados al plan
+# ✅ Presupuesto generado con conceptos detallados
+# ✅ Paciente puede aprobar/rechazar presupuestos
+# ✅ Tratamientos actualizados con progreso (pendiente → en_progreso → completado)
+# ✅ Plan de tratamiento completado
+# ✅ Presupuestos adicionales para tratamientos nuevos
+# ✅ Filtrado y búsqueda funcionan
+# ✅ Permisos correctos (paciente no puede crear planes)
+# ✅ Validaciones en presupuestos
+# ✅ Historial completo de tratamientos
+#
+###############################################################################

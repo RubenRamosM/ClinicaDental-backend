@@ -1,0 +1,378 @@
+###############################################################################
+# 🏥 CLÍNICA DENTAL - TESTS PACIENTE
+# Archivo de pruebas para ROL: PACIENTE
+# Base URL: http://localhost:8001/api/v1
+###############################################################################
+
+# ⚠️ IMPORTANTE: MUCHOS ENDPOINTS RETORNARÁN 404, 400 O 403
+# Los IDs usados (1, 127, 105, etc.) son ejemplos y probablemente NO EXISTEN en tu base de datos.
+# 
+# 🔧 Para usar este archivo correctamente:
+# 1. Primero ejecuta: python poblar_base_completa.py (para crear datos de prueba)
+# 2. O ejecuta los requests de LISTADO primero para obtener IDs reales
+# 3. Luego reemplaza los IDs de ejemplo con IDs reales de tu base de datos
+#
+# ⚠️ ERROR 403 FORBIDDEN: "Este endpoint solo está disponible para pacientes"
+# CAUSA: Estás usando el token de un odontólogo en endpoints de paciente
+# SOLUCIÓN: Asegúrate de ejecutar el LOGIN DE PACIENTE (request #1) primero
+#
+# 📝 Workflow recomendado:
+# - Ejecuta #1 (login PACIENTE) → Captura token correcto
+# - Ejecuta #7 (mis-citas) → Captura IDs reales de tus citas
+# - Ejecuta #23 (mis-presupuestos) → Captura IDs reales de presupuestos
+# - Ejecuta #32 (odontólogos) → Captura IDs reales de profesionales
+
+# Variables globales
+@baseUrl = http://localhost:8001/api/v1
+@pacienteEmail = paciente.prueba@clinica.com
+@pacientePassword = paciente123
+
+
+###############################################################################
+# 🔐 AUTENTICACIÓN PACIENTE
+###############################################################################
+
+### 1. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{pacienteEmail}}",
+  "password": "{{pacientePassword}}"
+}
+
+### Capturar token del paciente
+@pacienteToken = {{loginPaciente.response.body.token}}
+
+### 2. Verificar Token Paciente
+GET {{baseUrl}}/auth/verificar-token/
+Authorization: Token {{pacienteToken}}
+
+### 3. Ver Mi Perfil
+# ⚠️ ENDPOINT CORRECTO: /usuarios/yo/ (no /usuarios/mi-perfil/)
+GET {{baseUrl}}/usuarios/usuarios/yo/
+Authorization: Token {{pacienteToken}}
+
+### 4. Actualizar Mi Perfil
+# ⚠️ NOTA: Para actualizar, usa PUT /usuarios/pacientes/mi_perfil/ (ver request #4b)
+# Este endpoint /usuarios/mi-perfil/ NO EXISTE
+# PUT {{baseUrl}}/usuarios/mi-perfil/
+# Authorization: Token {{pacienteToken}}
+# Content-Type: application/json
+# 
+# {
+#   "telefono": "71234567",
+#   "direccion": "Nueva dirección #456"
+# }
+
+### 4b. Actualizar Mi Perfil de Paciente (CORRECTO)
+# ℹ️ Endpoint correcto: /usuarios/pacientes/mi_perfil/
+GET {{baseUrl}}/usuarios/pacientes/mi_perfil/
+Authorization: Token {{pacienteToken}}
+
+### 5. Cambiar Mi Contraseña
+POST {{baseUrl}}/auth/cambiar-password/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "password_actual": "{{pacientePassword}}",
+  "password_nuevo": "newpassword123",
+  "password_confirmacion": "newpassword123"
+}
+
+### 6. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 📅 MIS CITAS (PACIENTE)
+###############################################################################
+
+### 7. Ver Mis Citas
+# ℹ️ Endpoint correcto: /citas/mis_consultas/ (usa guion bajo, no guion medio)
+GET {{baseUrl}}/citas/mis_consultas/
+Authorization: Token {{pacienteToken}}
+
+### 8. Agendar Nueva Cita
+# ⚠️ NOTA: Usa el campo "paciente" (no "codpaciente" ni "idpaciente")
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "paciente": 131,
+  "tipoconsulta": 10,
+  "fecha": "2025-11-15T09:00:00",
+  "motivo": "Control de rutina"
+}
+
+### 9. Ver Detalle de Mi Cita
+# ⚠️ NOTA: Reemplaza 127 con un ID real de tu cita (del request #7)
+GET {{baseUrl}}/citas/consultas/127/
+Authorization: Token {{pacienteToken}}
+
+### 10. Solicitar Reprogramación de Cita
+# ⚠️ ENDPOINT NO EXISTE: /solicitar-reprogramacion/
+# Usa: POST /citas/consultas/{id}/reprogramar/
+# POST {{baseUrl}}/citas/127/solicitar-reprogramacion/
+POST {{baseUrl}}/citas/consultas/127/reprogramar/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "nueva_fecha": "2025-11-20T14:00:00",
+  "motivo": "Tengo un compromiso laboral"
+}
+
+### 11. Cancelar Mi Cita
+# ⚠️ NOTA: Debes proporcionar "motivo" en el body (es requerido)
+POST {{baseUrl}}/citas/consultas/127/cancelar/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "motivo": "No puedo asistir por motivos personales"
+}
+
+
+###############################################################################
+# 🕐 HORARIOS DISPONIBLES
+###############################################################################
+
+### 12. Ver Horarios Disponibles (Fecha específica)
+GET {{baseUrl}}/citas/horarios-disponibles/?fecha=2025-11-10
+Authorization: Token {{pacienteToken}}
+
+### 13. Ver Horarios Disponibles (Con odontólogo específico)
+GET {{baseUrl}}/citas/horarios-disponibles/?fecha=2025-11-10&odontologo_id=105
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 💊 CATÁLOGO DE SERVICIOS (PACIENTE)
+###############################################################################
+
+### 14. Ver Servicios Disponibles
+# ℹ️ Endpoint correcto para servicios
+GET {{baseUrl}}/administracion/servicios/?activo=true
+Authorization: Token {{pacienteToken}}
+
+### 15. Ver Detalle de un Servicio
+# ⚠️ NOTA: Reemplaza 9 con un ID real del request #14
+GET {{baseUrl}}/administracion/servicios/9/
+Authorization: Token {{pacienteToken}}
+
+### 16. Ver Tipos de Consulta Disponibles
+# ⚠️ ENDPOINT INCORRECTO: /administracion/tipos-consulta/ NO EXISTE
+# Endpoint correcto: /citas/tipos-consulta/
+GET {{baseUrl}}/citas/tipos-consulta/?activo=true
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 📋 MI HISTORIAL CLÍNICO (PACIENTE)
+###############################################################################
+
+### 17. Ver Mi Historial Clínico
+# ⚠️ ENDPOINT NO EXISTE: /mi-historial/
+# Usa: GET /historial-clinico/por_paciente/?paciente_id={tu_id}
+# O primero obtén tu ID de paciente del request #4b
+GET {{baseUrl}}/historial-clinico/por_paciente/?paciente_id=131
+Authorization: Token {{pacienteToken}}
+
+### 18. Ver Mis Documentos Clínicos
+# ⚠️ ENDPOINT NO EXISTE: /mis-documentos/
+# Usa: GET /historial-clinico/documentos/por_paciente/?codpaciente={tu_id}
+GET {{baseUrl}}/historial-clinico/documentos/por_paciente/?codpaciente=131
+Authorization: Token {{pacienteToken}}
+
+### 19. Descargar Mi Documento
+# ⚠️ ENDPOINT NO EXISTE: /descargar/
+# Usa: GET /historial-clinico/documentos/{id}/download_url/
+GET {{baseUrl}}/historial-clinico/documentos/1/download_url/
+Authorization: Token {{pacienteToken}}
+
+### 20. Ver Mi Odontograma
+# ⚠️ ENDPOINT NO EXISTE: /mi-odontograma/
+# Usa: GET /historial-clinico/odontogramas/por_paciente/?codpaciente={tu_id}
+GET {{baseUrl}}/historial-clinico/odontogramas/por_paciente/?codpaciente=131
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 💰 MIS PLANES Y PRESUPUESTOS (PACIENTE)
+###############################################################################
+
+### 21. Ver Mis Planes de Tratamiento
+# ⚠️ ENDPOINT NO EXISTE: /mis-planes/
+# Usa: GET /tratamientos/planes-tratamiento/por-paciente/?paciente_id={tu_id}
+GET {{baseUrl}}/tratamientos/planes-tratamiento/por-paciente/?paciente_id=131
+Authorization: Token {{pacienteToken}}
+
+### 22. Ver Detalle de Mi Plan
+# ⚠️ ENDPOINT INCORRECTO: /planes/{id}/ NO EXISTE
+# Endpoint correcto: /planes-tratamiento/{id}/
+GET {{baseUrl}}/tratamientos/planes-tratamiento/1/
+Authorization: Token {{pacienteToken}}
+
+### 23. Ver Mis Presupuestos
+# ℹ️ Endpoint correcto para mis presupuestos
+GET {{baseUrl}}/tratamientos/presupuestos/mis-presupuestos/
+Authorization: Token {{pacienteToken}}
+
+### 24. Ver Detalle de Presupuesto
+# ⚠️ ERROR 404: "No Presupuesto matches the given query."
+# CAUSA: El presupuesto con ID 1 no existe en la base de datos
+# SOLUCIÓN: Primero ejecuta #23 para ver tus presupuestos reales y obtener un ID válido
+# IMPORTANTE: Usa /tratamientos/presupuestos/ (no /presupuestos-digitales/)
+GET {{baseUrl}}/tratamientos/presupuestos/1/
+Authorization: Token {{pacienteToken}}
+
+### 25. Aprobar Presupuesto
+# ⚠️ ERROR 404: "No Presupuesto matches the given query."
+# CAUSA: El presupuesto con ID 1 no existe
+# SOLUCIÓN: Reemplaza 1 con un ID real del request #23
+# ℹ️ Endpoint correcto: /tratamientos/presupuestos/{id}/aprobar/
+POST {{baseUrl}}/tratamientos/presupuestos/1/aprobar/
+Authorization: Token {{pacienteToken}}
+
+### 26. Rechazar Presupuesto
+# ⚠️ ERROR 404: "No Presupuesto matches the given query."
+# CAUSA: El presupuesto con ID 1 no existe
+# SOLUCIÓN: Reemplaza 1 con un ID real del request #23
+# ℹ️ Endpoint correcto: /tratamientos/presupuestos/{id}/rechazar/
+POST {{baseUrl}}/tratamientos/presupuestos/1/rechazar/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "motivo": "El costo excede mi presupuesto"
+}
+
+### 27. Descargar PDF de Presupuesto
+# ⚠️ ENDPOINT NO EXISTE: /descargar-pdf/
+# Nota: La API no tiene endpoint para descargar PDF de presupuesto
+# GET {{baseUrl}}/presupuestos-digitales/1/descargar-pdf/
+# Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 💳 MIS PAGOS (PACIENTE)
+###############################################################################
+
+### 28. Ver Mi Historial de Pagos
+# ⚠️ ERROR 403: "Este endpoint solo está disponible para pacientes"
+# POSIBLE CAUSA: Estás autenticado como odontólogo, no como paciente
+# SOLUCIÓN: Usa el token del login de paciente (request #1)
+# ℹ️ Endpoint correcto: /tratamientos/pagos/mis-pagos/
+GET {{baseUrl}}/tratamientos/pagos/mis-pagos/
+Authorization: Token {{pacienteToken}}
+
+### 29. Ver Detalle de Pago
+# ⚠️ ERROR 404: "No HistorialPago matches the given query."
+# CAUSA: El pago con ID 1 no existe en la base de datos
+# SOLUCIÓN: Primero ejecuta #28 para ver tus pagos reales y obtener un ID válido
+GET {{baseUrl}}/tratamientos/pagos/1/
+Authorization: Token {{pacienteToken}}
+
+### 30. Procesar Pago con Stripe
+# ⚠️ ENDPOINT NO EXISTE: /pagos/procesar-stripe/
+# La API usa /sistema_pagos/ (requiere investigar endpoints disponibles)
+# POST {{baseUrl}}/pagos/procesar-stripe/
+# Authorization: Token {{pacienteToken}}
+# Content-Type: application/json
+# 
+# {
+#   "idconsulta": 127,
+#   "monto": "200.00",
+#   "payment_method_id": "pm_card_visa"
+# }
+
+### 31. Ver Mis Facturas Pendientes
+# ⚠️ ENDPOINT NO EXISTE: /mis-facturas-pendientes/
+# Usa filtros en el listado de pagos
+# GET {{baseUrl}}/pagos/mis-facturas-pendientes/
+# Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 👨‍⚕️ VER PROFESIONALES (PACIENTE)
+###############################################################################
+
+### 32. Ver Lista de Odontólogos Disponibles
+# ⚠️ NOTA: Verifica que el endpoint /profesionales/ exista
+# Puede requerir permisos especiales
+GET {{baseUrl}}/profesionales/odontologos/?activo=true
+Authorization: Token {{pacienteToken}}
+
+### 33. Ver Perfil de Odontólogo
+# ⚠️ NOTA: Reemplaza 105 con un ID real del request #32
+GET {{baseUrl}}/profesionales/odontologos/105/
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 🔔 NOTIFICACIONES (PACIENTE)
+###############################################################################
+
+### 34. Ver Mis Notificaciones
+# ⚠️ ENDPOINT NO EXISTE: /api/v1/notificaciones/ NO ESTÁ REGISTRADO
+# El sistema de notificaciones puede no estar implementado en esta API
+# GET {{baseUrl}}/notificaciones/mis-notificaciones/
+# Authorization: Token {{pacienteToken}}
+
+### 35. Marcar Notificación como Leída
+# ⚠️ ENDPOINT NO EXISTE: /api/v1/notificaciones/ NO ESTÁ REGISTRADO
+# POST {{baseUrl}}/notificaciones/1/marcar-leida/
+# Authorization: Token {{pacienteToken}}
+
+### 36. Configurar Preferencias de Notificaciones
+# ⚠️ ENDPOINT NO EXISTE: /mi-perfil/preferencias-notificaciones/
+# Usa: PUT /usuarios/usuarios/{id}/actualizar_notificaciones/
+# Necesitas tu ID de usuario (codusuario)
+# PUT {{baseUrl}}/usuarios/mi-perfil/preferencias-notificaciones/
+# Authorization: Token {{pacienteToken}}
+# Content-Type: application/json
+# 
+# {
+#   "notificaciones_email": true,
+#   "notificaciones_push": true,
+#   "notificaciones_sms": false
+# }
+
+
+###############################################################################
+# 📝 NOTAS PARA PACIENTE
+###############################################################################
+
+# ✅ Permisos del Paciente:
+# - Ver y editar su propio perfil
+# - Agendar, ver y cancelar sus propias citas
+# - Ver horarios disponibles
+# - Ver catálogo de servicios
+# - Ver su historial clínico (solo lectura)
+# - Ver y aprobar/rechazar sus presupuestos
+# - Ver sus planes de tratamiento
+# - Procesar pagos de sus consultas
+# - Ver lista de odontólogos
+# - Gestionar notificaciones
+#
+# ❌ NO puede:
+# - Ver datos de otros pacientes
+# - Crear/editar servicios
+# - Gestionar inventario
+# - Acceder a reportes administrativos
+# - Ver auditoría del sistema
+#
+# 🔑 Credenciales por defecto:
+# - Email: paciente.prueba@clinica.com
+# - Password: paciente123
+#
+# 💡 Tips:
+# - Ejecuta el login primero (request #1)
+# - El token se captura automáticamente
+# - Solo puedes ver/editar tus propios datos
+# - Para agendar citas, verifica horarios disponibles primero

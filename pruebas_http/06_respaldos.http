@@ -1,0 +1,496 @@
+###############################################################################
+# 📋 FLUJO 6: RESPALDOS EN LA NUBE (AWS S3)
+###############################################################################
+#
+# OBJETIVO: Probar sistema de respaldos automáticos en AWS S3
+#
+# ESCENARIOS:
+#   1. Listar respaldos existentes
+#   2. Crear respaldo manual
+#   3. Descargar respaldo
+#   4. Restaurar desde respaldo
+#   5. Eliminar respaldos antiguos
+#   6. Configurar respaldos automáticos
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. PREPARACIÓN - LOGIN ADMIN
+###############################################################################
+
+### 1.1. Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 1.2. Login Odontólogo (sin permisos)
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "maria.lopez@clinica.com",
+  "password": "odontologo123"
+}
+
+@odontologoToken = {{loginOdontologo.response.body.token}}
+
+###############################################################################
+# 2. LISTAR RESPALDOS EXISTENTES
+###############################################################################
+
+### 2.1. Listar todos los respaldos
+GET {{baseUrl}}/respaldos/respaldos/
+Authorization: Token {{adminToken}}
+
+### 2.2. Filtrar respaldos por tipo (completo)
+GET {{baseUrl}}/respaldos/respaldos/?tipo=completo
+Authorization: Token {{adminToken}}
+
+### 2.3. Filtrar respaldos por tipo (incremental)
+GET {{baseUrl}}/respaldos/respaldos/?tipo=incremental
+Authorization: Token {{adminToken}}
+
+### 2.4. Filtrar respaldos exitosos
+GET {{baseUrl}}/respaldos/respaldos/?estado=completado
+Authorization: Token {{adminToken}}
+
+### 2.5. Filtrar respaldos fallidos
+GET {{baseUrl}}/respaldos/respaldos/?estado=fallido
+Authorization: Token {{adminToken}}
+
+### 2.6. Respaldos de los últimos 7 días
+GET {{baseUrl}}/respaldos/respaldos/?dias=7
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 3. CREAR RESPALDO MANUAL
+###############################################################################
+
+### 3.1. Crear respaldo completo manual
+# @name crearRespaldoCompleto
+POST {{baseUrl}}/respaldos/respaldos/crear-manual/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "tipo": "completo",
+  "descripcion": "Respaldo manual completo - Prueba E2E",
+  "incluir_media": true
+}
+
+@respaldoCompletoId = {{crearRespaldoCompleto.response.body.id}}
+
+### 3.2. Verificar respaldo en progreso
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/
+Authorization: Token {{adminToken}}
+
+### 3.3. Esperar 5 segundos y verificar estado
+# NOTA: En REST Client, ejecutar manualmente después de esperar
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/
+Authorization: Token {{adminToken}}
+
+### 3.4. Crear respaldo incremental
+# @name crearRespaldoIncremental
+POST {{baseUrl}}/respaldos/respaldos/crear-manual/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "tipo": "incremental",
+  "descripcion": "Respaldo incremental - Solo cambios recientes",
+  "incluir_media": false
+}
+
+@respaldoIncrementalId = {{crearRespaldoIncremental.response.body.id}}
+
+### 3.5. Verificar respaldo incremental
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoIncrementalId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 4. VER DETALLES DE RESPALDO
+###############################################################################
+
+### 4.1. Ver detalles completos del respaldo
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/
+Authorization: Token {{adminToken}}
+
+### 4.2. Ver información de almacenamiento
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/info-almacenamiento/
+Authorization: Token {{adminToken}}
+
+### 4.3. Verificar integridad del respaldo
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/verificar-integridad/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 5. DESCARGAR RESPALDO
+###############################################################################
+
+### 5.1. Obtener URL de descarga temporal (pre-signed URL)
+# @name obtenerUrlDescarga
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/generar-url-descarga/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "duracion_horas": 1
+}
+
+@urlDescarga = {{obtenerUrlDescarga.response.body.url}}
+
+### 5.2. Descargar respaldo directamente (stream)
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/descargar/
+Authorization: Token {{adminToken}}
+
+### 5.3. Listar archivos dentro del respaldo
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/listar-archivos/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 6. RESTAURAR DESDE RESPALDO
+###############################################################################
+
+### 6.1. Validar respaldo antes de restaurar
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/validar-restauracion/
+Authorization: Token {{adminToken}}
+
+### 6.2. Crear punto de restauración (respaldo previo)
+# @name crearPuntoRestauracion
+POST {{baseUrl}}/respaldos/respaldos/crear-manual/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "tipo": "completo",
+  "descripcion": "Punto de restauración antes de prueba",
+  "incluir_media": true
+}
+
+@puntoRestauracionId = {{crearPuntoRestauracion.response.body.id}}
+
+### 6.3. Restaurar desde respaldo (CUIDADO: Sobrescribe datos)
+# NOTA: Solo ejecutar en ambiente de pruebas
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/restaurar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "confirmar": true,
+  "restaurar_media": false,
+  "crear_backup_previo": true
+}
+
+### 6.4. Verificar estado de restauración
+GET {{baseUrl}}/respaldos/restauraciones/ultima/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 7. CONFIGURACIÓN DE RESPALDOS AUTOMÁTICOS
+###############################################################################
+
+### 7.1. Ver configuración actual
+GET {{baseUrl}}/respaldos/configuracion/
+Authorization: Token {{adminToken}}
+
+### 7.2. Actualizar configuración de respaldos automáticos
+PATCH {{baseUrl}}/respaldos/configuracion/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "respaldo_automatico_activo": true,
+  "frecuencia_dias": 1,
+  "hora_ejecucion": "02:00",
+  "tipo_respaldo_automatico": "incremental",
+  "incluir_media_automatico": true,
+  "retener_respaldos_dias": 30,
+  "maximo_respaldos": 50,
+  "notificar_email": true,
+  "emails_notificacion": ["admin@clinica.com"]
+}
+
+### 7.3. Verificar configuración actualizada
+GET {{baseUrl}}/respaldos/configuracion/
+Authorization: Token {{adminToken}}
+
+### 7.4. Forzar ejecución de respaldo automático ahora
+POST {{baseUrl}}/respaldos/configuracion/ejecutar-ahora/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 8. HISTORIAL DE RESPALDOS
+###############################################################################
+
+### 8.1. Ver historial completo de respaldos
+GET {{baseUrl}}/respaldos/respaldos/?ordering=-fecha_creacion
+Authorization: Token {{adminToken}}
+
+### 8.2. Respaldos agrupados por mes
+GET {{baseUrl}}/respaldos/respaldos/estadisticas-mensuales/
+Authorization: Token {{adminToken}}
+
+### 8.3. Tamaño total de respaldos
+GET {{baseUrl}}/respaldos/respaldos/estadisticas-almacenamiento/
+Authorization: Token {{adminToken}}
+
+### 8.4. Últimos 10 respaldos
+GET {{baseUrl}}/respaldos/respaldos/?ordering=-fecha_creacion&limit=10
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 9. ELIMINAR RESPALDOS
+###############################################################################
+
+### 9.1. Eliminar respaldo antiguo (soft delete)
+DELETE {{baseUrl}}/respaldos/respaldos/{{respaldoIncrementalId}}/
+Authorization: Token {{adminToken}}
+
+### 9.2. Verificar que fue marcado como eliminado
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoIncrementalId}}/
+Authorization: Token {{adminToken}}
+
+### 9.3. Listar respaldos eliminados
+GET {{baseUrl}}/respaldos/respaldos/?eliminado=true
+Authorization: Token {{adminToken}}
+
+### 9.4. Restaurar respaldo eliminado
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoIncrementalId}}/restaurar-eliminado/
+Authorization: Token {{adminToken}}
+
+### 9.5. Eliminar permanentemente de S3
+DELETE {{baseUrl}}/respaldos/respaldos/{{respaldoIncrementalId}}/eliminar-permanente/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 10. LIMPIEZA AUTOMÁTICA DE RESPALDOS
+###############################################################################
+
+### 10.1. Listar respaldos candidatos para limpieza
+GET {{baseUrl}}/respaldos/respaldos/candidatos-limpieza/
+Authorization: Token {{adminToken}}
+
+### 10.2. Ejecutar limpieza automática (elimina respaldos antiguos)
+POST {{baseUrl}}/respaldos/respaldos/limpiar-antiguos/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "dias_retencion": 30,
+  "confirmar": true
+}
+
+### 10.3. Ver resultados de limpieza
+GET {{baseUrl}}/respaldos/respaldos/ultimo-resultado-limpieza/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 11. NOTIFICACIONES Y ALERTAS
+###############################################################################
+
+### 11.1. Ver historial de notificaciones
+GET {{baseUrl}}/respaldos/notificaciones/
+Authorization: Token {{adminToken}}
+
+### 11.2. Configurar alertas de fallos
+POST {{baseUrl}}/respaldos/configuracion/alertas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "notificar_fallos": true,
+  "notificar_exito": false,
+  "emails": ["admin@clinica.com", "soporte@clinica.com"]
+}
+
+### 11.3. Probar envío de notificación
+POST {{baseUrl}}/respaldos/configuracion/test-notificacion/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "tipo": "test",
+  "correo": "admin@clinica.com"
+}
+
+###############################################################################
+# 12. BÚSQUEDA Y FILTRADO AVANZADO
+###############################################################################
+
+### 12.1. Buscar respaldos por descripción
+GET {{baseUrl}}/respaldos/respaldos/?search=manual
+Authorization: Token {{adminToken}}
+
+### 12.2. Filtrar por rango de fechas
+GET {{baseUrl}}/respaldos/respaldos/?fecha_desde=2025-11-01&fecha_hasta=2025-11-30
+Authorization: Token {{adminToken}}
+
+### 12.3. Filtrar por tamaño mínimo (en MB)
+GET {{baseUrl}}/respaldos/respaldos/?tamano_minimo=10
+Authorization: Token {{adminToken}}
+
+### 12.4. Respaldos con media incluida
+GET {{baseUrl}}/respaldos/respaldos/?incluye_media=true
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 13. COMPARAR RESPALDOS
+###############################################################################
+
+### 13.1. Comparar dos respaldos
+POST {{baseUrl}}/respaldos/respaldos/comparar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "respaldo_origen_id": {{puntoRestauracionId}},
+  "respaldo_destino_id": {{respaldoCompletoId}}
+}
+
+### 13.2. Ver diferencias entre respaldos
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/diferencias/{{puntoRestauracionId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 14. EXPORTAR RESPALDOS A OTRA REGIÓN
+###############################################################################
+
+### 14.1. Copiar respaldo a otra región de S3
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/copiar-region/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "region_destino": "us-east-1",
+  "bucket_destino": "clinica-backups-replica"
+}
+
+### 14.2. Ver copias del respaldo
+GET {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/copias/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 15. PERMISOS - ODONTÓLOGO SIN ACCESO
+###############################################################################
+
+### 15.1. Odontólogo intenta listar respaldos (debe fallar)
+GET {{baseUrl}}/respaldos/respaldos/
+Authorization: Token {{odontologoToken}}
+
+### 15.2. Odontólogo intenta crear respaldo (debe fallar)
+POST {{baseUrl}}/respaldos/respaldos/crear-manual/
+Content-Type: application/json
+Authorization: Token {{odontologoToken}}
+
+{
+  "tipo": "completo",
+  "descripcion": "Intento no autorizado"
+}
+
+### 15.3. Odontólogo intenta ver configuración (debe fallar)
+GET {{baseUrl}}/respaldos/configuracion/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 16. EDGE CASES Y VALIDACIONES
+###############################################################################
+
+### 16.1. Intentar restaurar sin confirmación (debe fallar)
+POST {{baseUrl}}/respaldos/respaldos/{{respaldoCompletoId}}/restaurar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "confirmar": false
+}
+
+### 16.2. Intentar descargar respaldo inexistente
+GET {{baseUrl}}/respaldos/respaldos/99999/descargar/
+Authorization: Token {{adminToken}}
+
+### 16.3. Crear respaldo con tipo inválido
+POST {{baseUrl}}/respaldos/respaldos/crear-manual/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "tipo": "invalido",
+  "descripcion": "Tipo no válido"
+}
+
+### 16.4. Configurar frecuencia menor a 1 día (debe fallar)
+PATCH {{baseUrl}}/respaldos/configuracion/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "frecuencia_dias": 0
+}
+
+###############################################################################
+# 17. MONITOREO Y SALUD DEL SISTEMA
+###############################################################################
+
+### 17.1. Verificar conectividad con S3
+GET {{baseUrl}}/respaldos/sistema/verificar-s3/
+Authorization: Token {{adminToken}}
+
+### 17.2. Ver espacio disponible en S3
+GET {{baseUrl}}/respaldos/sistema/espacio-disponible/
+Authorization: Token {{adminToken}}
+
+### 17.3. Estado general del sistema de respaldos
+GET {{baseUrl}}/respaldos/sistema/estado/
+Authorization: Token {{adminToken}}
+
+### 17.4. Último respaldo exitoso
+GET {{baseUrl}}/respaldos/respaldos/ultimo-exitoso/
+Authorization: Token {{adminToken}}
+
+### 17.5. Próximo respaldo programado
+GET {{baseUrl}}/respaldos/respaldos/proximo-programado/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 18. LOGOUT
+###############################################################################
+
+### 18.1. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+### 18.2. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Respaldos listados correctamente (completos e incrementales)
+# ✅ Respaldo manual creado y subido a S3
+# ✅ URL de descarga temporal generada
+# ✅ Respaldo descargado exitosamente
+# ✅ Validación de integridad funciona
+# ✅ Configuración de respaldos automáticos actualizada
+# ✅ Restauración validada antes de ejecutar
+# ✅ Respaldos antiguos eliminados automáticamente
+# ✅ Notificaciones configuradas
+# ✅ Búsqueda y filtrado funcionan
+# ✅ Comparación entre respaldos funciona
+# ✅ Permisos correctos (solo Admin accede)
+# ✅ Validaciones impiden operaciones no seguras
+# ✅ Monitoreo de S3 funciona
+# ✅ Estado del sistema de respaldos visible
+#
+###############################################################################

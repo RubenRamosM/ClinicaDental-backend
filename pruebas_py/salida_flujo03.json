@@ -1,0 +1,96 @@
+{
+  "flujo": {
+    "numero": 3,
+    "nombre": "Historiales Clinicos",
+    "descripcion": "Resultados de la ejecucion del flujo 03"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T18:50:45.975263",
+    "fin": "2025-11-03T18:51:06.384521",
+    "duracion_segundos": 20.41,
+    "fecha_legible": "03/11/2025 18:50:45"
+  },
+  "estadisticas": {
+    "total_secciones": 5,
+    "secciones_exitosas": 5,
+    "secciones_fallidas": 0,
+    "tasa_exito_porcentaje": 100.0,
+    "total_errores": 0,
+    "total_datos_creados": 1
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Autenticacion",
+      "exito": true,
+      "timestamp": "2025-11-03T18:50:53.602367",
+      "detalles": {
+        "roles_autenticados": [
+          "Paciente",
+          "Odontologo",
+          "Admin"
+        ],
+        "paciente_id": 641
+      }
+    },
+    {
+      "numero": 2,
+      "nombre": "Consultar historiales",
+      "exito": true,
+      "timestamp": "2025-11-03T18:50:57.864456",
+      "detalles": {
+        "consultas_realizadas": 2
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Crear historial clinico",
+      "exito": true,
+      "timestamp": "2025-11-03T18:50:59.993630",
+      "detalles": {
+        "historial_id": 290,
+        "paciente_id": 641
+      }
+    },
+    {
+      "numero": 4,
+      "nombre": "Consultar detalle del historial",
+      "exito": true,
+      "timestamp": "2025-11-03T18:51:02.137769",
+      "detalles": {
+        "historial_id": 290
+      }
+    },
+    {
+      "numero": 5,
+      "nombre": "Actualizar historial",
+      "exito": true,
+      "timestamp": "2025-11-03T18:51:06.381156",
+      "detalles": {
+        "historial_id": 290,
+        "campos_actualizados": [
+          "diagnostico",
+          "tratamiento",
+          "receta"
+        ]
+      }
+    }
+  ],
+  "datos_creados": {
+    "historial": [
+      {
+        "id": 290,
+        "datos": {
+          "paciente": 641,
+          "motivo": "Dolor en muela inferior derecha - solicita revision urgente"
+        },
+        "timestamp": "2025-11-03T18:50:59.993645"
+      }
+    ]
+  },
+  "errores": [],
+  "resumen": {
+    "estado": "EXITOSO",
+    "mensaje": "Todas las 5 secciones ejecutadas exitosamente"
+  }
+}

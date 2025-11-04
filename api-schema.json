@@ -1,0 +1,635 @@
+[
+  {
+    "viewset": "PacienteViewSet",
+    "app": "apps.usuarios",
+    "serializer": "PacienteSerializer",
+    "fields": {
+      "codusuario": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "usuario": {
+        "type": "UsuarioSerializer",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "apellido": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "correo": {
+        "type": "EmailField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "telefono": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "carnetidentidad": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "fechanacimiento": {
+        "type": "DateField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "edad": {
+        "type": "SerializerMethodField",
+        "ts_type": "any",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "direccion": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "TipodeusuarioViewSet",
+    "app": "apps.usuarios",
+    "serializer": "TipodeusuarioSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "rol": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "descripcion": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "OdontologoViewSet",
+    "app": "apps.profesionales",
+    "serializer": "OdontologoSerializer",
+    "fields": {
+      "codusuario": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "apellido": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "email": {
+        "type": "EmailField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "telefono": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "especialidad": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "experienciaprofesional": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "nromatricula": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "activo": {
+        "type": "BooleanField",
+        "ts_type": "boolean",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "ProfesionalViewSet",
+    "app": "apps.profesionales",
+    "serializer": "OdontologoSerializer",
+    "fields": {
+      "codusuario": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "apellido": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "email": {
+        "type": "EmailField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "telefono": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "especialidad": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "experienciaprofesional": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "nromatricula": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "activo": {
+        "type": "BooleanField",
+        "ts_type": "boolean",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "EstadodefacturaViewSet",
+    "app": "apps.sistema_pagos",
+    "serializer": "EstadodefacturaSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "estado": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "FacturaViewSet",
+    "app": "apps.sistema_pagos",
+    "serializer": "FacturaSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "fechaemision": {
+        "type": "DateField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "montototal": {
+        "type": "DecimalField",
+        "ts_type": "number",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "idestadofactura": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "estado_nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "items": {
+        "type": "ListSerializer",
+        "ts_type": "any[]",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "PagoEnLineaViewSet",
+    "app": "apps.sistema_pagos",
+    "serializer": "PagoEnLineaSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "codigo_pago": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "origen_tipo": {
+        "type": "ChoiceField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "consulta": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "monto": {
+        "type": "DecimalField",
+        "ts_type": "number",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "moneda": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "estado": {
+        "type": "ChoiceField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "metodo_pago": {
+        "type": "ChoiceField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "stripe_payment_intent_id": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "descripcion": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "fecha_creacion": {
+        "type": "DateTimeField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "PagoViewSet",
+    "app": "apps.sistema_pagos",
+    "serializer": "PagoSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "idfactura": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "factura_info": {
+        "type": "SerializerMethodField",
+        "ts_type": "any",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "idtipopago": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "tipo_pago_nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "montopagado": {
+        "type": "DecimalField",
+        "ts_type": "number",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "fechapago": {
+        "type": "DateField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "TipopagoViewSet",
+    "app": "apps.sistema_pagos",
+    "serializer": "TipopagoSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "nombrepago": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "AlertaInventarioViewSet",
+    "app": "apps.inventario",
+    "serializer": "AlertaInventarioSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "insumo": {
+        "type": "PrimaryKeyRelatedField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "insumo_nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "insumo_codigo": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "tipo_alerta": {
+        "type": "ChoiceField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "mensaje": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "prioridad": {
+        "type": "ChoiceField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "stock_actual": {
+        "type": "DecimalField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "resuelta": {
+        "type": "BooleanField",
+        "ts_type": "boolean",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "fecha_creacion": {
+        "type": "DateTimeField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "fecha_resolucion": {
+        "type": "DateTimeField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "CategoriaInsumoViewSet",
+    "app": "apps.inventario",
+    "serializer": "CategoriaInsumoSerializer",
+    "fields": {
+      "id": {
+        "type": "IntegerField",
+        "ts_type": "number",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "nombre": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": true,
+        "read_only": false,
+        "help_text": ""
+      },
+      "descripcion": {
+        "type": "CharField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "activo": {
+        "type": "BooleanField",
+        "ts_type": "boolean",
+        "required": false,
+        "read_only": false,
+        "help_text": ""
+      },
+      "fecha_creacion": {
+        "type": "DateTimeField",
+        "ts_type": "string",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      },
+      "total_insumos": {
+        "type": "SerializerMethodField",
+        "ts_type": "any",
+        "required": false,
+        "read_only": true,
+        "help_text": ""
+      }
+    }
+  },
+  {
+    "viewset": "ComboServicioViewSet",
+    "app": "apps.administracion_clinica",
+    "serializer": "ComboServicioSerializer",
+    "fields": {
+      "error": "Field name `descuento_porcentaje` is not valid for model `ComboServicio` in `apps.administracion_clinica.serializers.ComboServicioSerializer`."
+    }
+  },
+  {
+    "viewset": "ServicioViewSet",
+    "app": "apps.administracion_clinica",
+    "serializer": "ServicioSerializer",
+    "fields": {
+      "error": "Field name `precio` is not valid for model `Servicio` in `apps.administracion_clinica.serializers.ServicioSerializer`."
+    }
+  },
+  {
+    "viewset": "BitacoraViewSet",
+    "app": "apps.auditoria",
+    "serializer": "BitacoraSerializer",
+    "fields": {
+      "error": "The `read_only_fields` option must be a list or tuple. Got str."
+    }
+  }
+]

@@ -1,0 +1,152 @@
+###############################################################################
+# 🔍 VERIFICACIÓN DEL SEEDER
+###############################################################################
+#
+# OBJETIVO: Verificar que seed_database.py pobló correctamente la BD
+#
+# PREREQUISITO: Ejecutar primero:
+#   python seed_database.py --force
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. VERIFICAR USUARIOS
+###############################################################################
+
+### 1.1. Login como Admin (del seeder)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+### 1.2. Listar todos los usuarios (debe haber admin + odontólogos + pacientes)
+GET {{baseUrl}}/usuarios/
+Authorization: Token {{loginAdmin.response.body.token}}
+
+### 1.3. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 2. VERIFICAR ODONTÓLOGOS
+###############################################################################
+
+### 2.1. Login como Odontólogo (del seeder)
+# @name loginOdontologo
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "maria.lopez@clinica.com",
+  "password": "odontologo123"
+}
+
+@odontologoToken = {{loginOdontologo.response.body.token}}
+
+### 2.2. Listar odontólogos
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{odontologoToken}}
+
+### 2.3. Logout Odontólogo
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+###############################################################################
+# 3. VERIFICAR PACIENTES
+###############################################################################
+
+### 3.1. Login como Paciente (del seeder)
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+
+### 3.2. Ver mi perfil como paciente
+GET {{baseUrl}}/usuarios/perfil/
+Authorization: Token {{pacienteToken}}
+
+### 3.3. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 4. VERIFICAR SERVICIOS Y COMBOS
+###############################################################################
+
+### 4.1. Login Admin
+# @name loginAdmin2
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin2.response.body.token}}
+
+### 4.2. Listar servicios (debe haber servicios del seeder)
+GET {{baseUrl}}/servicios/servicios/
+Authorization: Token {{adminToken}}
+
+### 4.3. Listar combos (debe haber combos del seeder)
+GET {{baseUrl}}/servicios/combos/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 5. VERIFICAR TIPOS DE CONSULTA Y HORARIOS
+###############################################################################
+
+### 5.1. Listar tipos de consulta
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminToken}}
+
+### 5.2. Listar horarios disponibles
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminToken}}
+
+### 5.3. Listar estados de consulta
+GET {{baseUrl}}/citas/estados-consulta/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 6. VERIFICAR CONSULTAS EXISTENTES
+###############################################################################
+
+### 6.1. Listar consultas (puede haber o no del seeder)
+GET {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminToken}}
+
+### 6.2. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# Si todo está bien, deberías ver:
+# ✅ Admin login exitoso (token generado)
+# ✅ Al menos 1 odontólogo (Dra. María López)
+# ✅ Al menos 1 paciente (Juan Pérez - paciente1@test.com)
+# ✅ Servicios odontológicos (limpieza, ortodoncia, etc.)
+# ✅ Combos de servicios
+# ✅ Tipos de consulta (primera vez, control, urgencia)
+# ✅ Horarios (08:00, 09:00, 10:00, etc.)
+# ✅ Estados de consulta (pendiente, confirmada, etc.)
+#
+# Si falta algo, ejecutar: python seed_database.py --force
+#
+###############################################################################

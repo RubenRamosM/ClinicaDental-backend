@@ -1,0 +1,80 @@
+{
+  "flujo": {
+    "numero": 8,
+    "nombre": "Pruebas de Bitacora y Auditoria",
+    "descripcion": "Resultados de la ejecucion del flujo 08"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T19:44:19.272409",
+    "fin": "2025-11-03T19:44:38.743504",
+    "duracion_segundos": 19.47,
+    "fecha_legible": "03/11/2025 19:44:19"
+  },
+  "estadisticas": {
+    "total_secciones": 7,
+    "secciones_exitosas": 6,
+    "secciones_fallidas": 1,
+    "tasa_exito_porcentaje": 85.71,
+    "total_errores": 0,
+    "total_datos_creados": 0
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Autenticacion como Administrador",
+      "exito": true,
+      "timestamp": "2025-11-03T19:44:21.750313",
+      "detalles": {}
+    },
+    {
+      "numero": 2,
+      "nombre": "Listar Registros de Bitacora",
+      "exito": true,
+      "timestamp": "2025-11-03T19:44:23.864965",
+      "detalles": {
+        "total_registros": 25
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Filtrar Registros por Usuario",
+      "exito": false,
+      "timestamp": "2025-11-03T19:44:28.087554",
+      "detalles": {}
+    },
+    {
+      "numero": 4,
+      "nombre": "Filtrar Registros por Tabla",
+      "exito": true,
+      "timestamp": "2025-11-03T19:44:30.175818",
+      "detalles": {}
+    },
+    {
+      "numero": 5,
+      "nombre": "Obtener Resumen de Actividad",
+      "exito": true,
+      "timestamp": "2025-11-03T19:44:32.275511",
+      "detalles": {}
+    },
+    {
+      "numero": 6,
+      "nombre": "Obtener Actividad Reciente",
+      "exito": true,
+      "timestamp": "2025-11-03T19:44:34.384090",
+      "detalles": {}
+    },
+    {
+      "numero": 7,
+      "nombre": "Buscar en Bitacora",
+      "exito": true,
+      "timestamp": "2025-11-03T19:44:38.743497",
+      "detalles": {}
+    }
+  ],
+  "datos_creados": {},
+  "errores": [],
+  "resumen": {
+    "estado": "CON_ERRORES",
+    "mensaje": "6 secciones exitosas, 1 con errores"
+  }
+}

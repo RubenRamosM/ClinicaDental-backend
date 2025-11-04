@@ -1,0 +1,466 @@
+###############################################################################
+# 🏥 CLÍNICA DENTAL - TESTS ADMINISTRADOR
+# Archivo de pruebas para ROL: ADMINISTRADOR
+# Base URL: http://localhost:8001/api/v1
+###############################################################################
+
+# Variables globales
+@baseUrl = http://localhost:8001/api/v1
+@adminEmail = admin@clinica.com
+@adminPassword = admin123
+
+
+###############################################################################
+# 🔐 AUTENTICACIÓN ADMIN
+###############################################################################
+
+### 1. Login Admin (VALORES DIRECTOS - USA ESTE SI LAS VARIABLES FALLAN)
+# @name loginAdmin
+POST http://localhost:8001/api/v1/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+### 1b. Login Admin (con variables)
+# @name loginAdminVar
+# POST {{baseUrl}}/auth/login/
+# Content-Type: application/json
+# 
+# {
+#   "correo": "{{adminEmail}}",
+#   "password": "{{adminPassword}}"
+# }
+
+### Capturar token del admin
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 2. Verificar Token Admin
+GET {{baseUrl}}/auth/verificar-token/
+Authorization: Token {{adminToken}}
+
+### 3. Cambiar Contraseña Admin (OPCIONAL - comentado para no cambiar credenciales)
+# POST {{baseUrl}}/auth/cambiar-password/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "password_actual": "{{adminPassword}}",
+#   "password_nuevo": "newpassword123",
+#   "password_confirmacion": "newpassword123"
+# }
+#
+# ⚠️ ADVERTENCIA: Si ejecutas esto, la contraseña cambiará de admin123 a newpassword123
+# y tendrás que actualizar @adminPassword = newpassword123 para seguir probando
+
+### 4. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 👥 GESTIÓN DE USUARIOS (ADMIN)
+###############################################################################
+
+### 5. Listar Todos los Usuarios
+GET {{baseUrl}}/usuarios/usuarios/?page=1&page_size=10
+Authorization: Token {{adminToken}}
+
+### Request 6: Crear Usuario
+POST {{baseUrl}}/usuarios/usuarios/crear-usuario/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "tipo_usuario": 1,
+  "datos": {
+    "nombre": "Juan",
+    "apellido": "Pérez",
+    "correoelectronico": "juan.perez.nuevo@example.com",
+    "sexo": "Masculino",
+    "telefono": "70123456",
+    "password": "password123",
+    "carnetidentidad": "12345678",
+    "fechanacimiento": "1990-05-15",
+    "direccion": "Av. Principal #123"
+  }
+}
+
+### 7. Obtener Usuario por ID (usa un ID existente de tu BD)
+GET {{baseUrl}}/usuarios/usuarios/1/
+Authorization: Token {{adminToken}}
+
+### 8. Actualizar Usuario (usa el ID del usuario creado en #6)
+PATCH {{baseUrl}}/usuarios/usuarios/1/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Admin Actualizado",
+  "telefono": "70999888"
+}
+
+### 9. Eliminar Usuario (comentado para no borrar usuarios importantes)
+# DELETE {{baseUrl}}/usuarios/usuarios/[ID]/
+# Authorization: Token {{adminToken}}
+
+### 10. Listar Pacientes
+GET {{baseUrl}}/usuarios/pacientes/?page=1
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📅 GESTIÓN DE CITAS (ADMIN)
+###############################################################################
+
+### 11. Listar Todas las Citas
+GET {{baseUrl}}/citas/?page=1
+Authorization: Token {{adminToken}}
+
+### 12. Crear Cita para Paciente
+POST {{baseUrl}}/citas/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "fecha": "2025-11-10",
+  "codpaciente": 131,
+  "cododontologo": 96,
+  "idhorario": 1,
+  "idtipoconsulta": 1,
+  "motivo_consulta": "Limpieza dental regular"
+}
+
+### 13. Obtener Cita por ID (usa un ID de cita existente - listar primero para obtener IDs válidos)
+# GET {{baseUrl}}/citas/1/
+# Authorization: Token {{adminToken}}
+
+### 14. Actualizar Cita (comentado - usar ID válido del listado)
+# PATCH {{baseUrl}}/citas/1/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "diagnostico": "Caries leve en molar inferior",
+#   "observaciones": "Paciente tolera bien el procedimiento"
+# }
+
+### 15. Reprogramar Cita (si existe este endpoint)
+# POST {{baseUrl}}/citas/1/reprogramar/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "nueva_fecha": "2025-11-15",
+#   "nuevo_horario": 2,
+#   "motivo": "Solicitud del paciente"
+# }
+
+### 16. Cancelar Cita (si existe este endpoint)
+# POST {{baseUrl}}/citas/1/cancelar/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "motivo": "Emergencia familiar"
+# }
+
+
+###############################################################################
+# 💊 GESTIÓN DE SERVICIOS (ADMIN)
+###############################################################################
+
+### 17. Listar Servicios
+GET {{baseUrl}}/administracion/servicios/?page=1&page_size=10
+Authorization: Token {{adminToken}}
+
+### 18. Crear Servicio
+POST {{baseUrl}}/administracion/servicios/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Blanqueamiento Láser Premium",
+  "descripcion": "Tratamiento estético de blanqueamiento con láser",
+  "costobase": "800.00",
+  "duracion": 90,
+  "activo": true
+}
+
+### 19. Actualizar Servicio (usa un ID existente - usar PATCH para actualización parcial)
+PATCH {{baseUrl}}/administracion/servicios/1/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "costobase": "120.00",
+  "duracion": 45
+}
+
+### 20. Eliminar Servicio (comentado para no borrar servicios)
+# DELETE {{baseUrl}}/administracion/servicios/[ID]/
+# Authorization: Token {{adminToken}}
+
+### 21. Listar Tipos de Consulta
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 💳 GESTIÓN DE PAGOS (ADMIN)
+###############################################################################
+
+### 22. Listar Todos los Pagos
+GET {{baseUrl}}/pagos/?page=1
+Authorization: Token {{adminToken}}
+
+### 23. Crear Pago (comentado - requiere consulta válida)
+# POST {{baseUrl}}/pagos/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "idconsulta": 1,
+#   "monto": "150.00",
+#   "metodopago": "Efectivo",
+#   "estado": "completado"
+# }
+
+### 24. Obtener Pago por ID
+GET {{baseUrl}}/pagos/1/
+Authorization: Token {{adminToken}}
+
+### 25. Listar Pagos (con filtro opcional: ?paciente=1)
+GET {{baseUrl}}/pagos/?paciente=1
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📋 HISTORIAL CLÍNICO (ADMIN)
+###############################################################################
+
+### 26. Obtener Historial del Paciente
+GET {{baseUrl}}/historial-clinico/paciente/1/
+Authorization: Token {{adminToken}}
+
+### 27. Listar Documentos del Paciente (con filtro)
+GET {{baseUrl}}/historial-clinico/documentos/por_paciente/?paciente_id=1
+Authorization: Token {{adminToken}}
+
+### 28. Descargar URL del Documento (usa un ID existente)
+# GET {{baseUrl}}/historial-clinico/documentos/1/download_url/
+# Authorization: Token {{adminToken}}
+
+### 29. Odontograma del Paciente (usar ID del paciente)
+GET {{baseUrl}}/historial-clinico/odontograma/1/
+Authorization: Token {{adminToken}}
+
+### 30. Actualizar Diente en Odontograma (comentado)
+# PUT {{baseUrl}}/historial-clinico/odontograma/1/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "estado": "Cariado",
+#   "observaciones": "Caries superficial en cara oclusal"
+# }
+
+
+###############################################################################
+# 💰 PLANES DE TRATAMIENTO (ADMIN)
+###############################################################################
+
+### 31. Listar Planes de Tratamiento
+GET {{baseUrl}}/tratamientos/planes-tratamiento/?page=1
+Authorization: Token {{adminToken}}
+
+### 32. Crear Plan de Tratamiento (comentado - requiere paciente y odontólogo válidos)
+# POST {{baseUrl}}/tratamientos/planes-tratamiento/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "paciente": 1,
+#   "odontologo": 96,
+#   "diagnostico": "Necesita ortodoncia",
+#   "observaciones": "Tratamiento estimado 18 meses",
+#   "estado": "propuesto"
+# }
+
+### 33. Obtener Plan por ID (comentado - usar ID válido del listado)
+# GET {{baseUrl}}/tratamientos/planes-tratamiento/1/
+# Authorization: Token {{adminToken}}
+
+### 34. Listar Presupuestos
+GET {{baseUrl}}/tratamientos/presupuestos/?page=1
+Authorization: Token {{adminToken}}
+
+### 35. Crear Presupuesto (comentado)
+# POST {{baseUrl}}/tratamientos/presupuestos/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "plan_tratamiento": 1,
+#   "fecha_vencimiento": "2025-12-31",
+#   "descuento": "50.00",
+#   "notas": "Descuento por pago anticipado"
+# }
+
+### 36. Aprobar Presupuesto (comentado - usar ID válido)
+# POST {{baseUrl}}/tratamientos/presupuestos/1/aprobar/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "servicio": 1,
+#   "cantidad": 1,
+#   "precio_unitario": "500.00"
+# }
+
+
+###############################################################################
+# 👨‍⚕️ GESTIÓN DE PROFESIONALES (ADMIN)
+###############################################################################
+
+### 37. Listar Odontólogos
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminToken}}
+
+### 38. Obtener Odontólogo por ID
+GET {{baseUrl}}/profesionales/odontologos/96/
+Authorization: Token {{adminToken}}
+
+### 39. Crear Odontólogo (comentado)
+# POST {{baseUrl}}/profesionales/odontologos/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "usuario": {
+#     "nombre": "María",
+#     "apellido": "González",
+#     "correoelectronico": "maria.gonzalez.nueva@clinica.com",
+#     "sexo": "F",
+#     "telefono": "71234567",
+#     "tipo_usuario": 3,
+#     "password": "password123"
+#   },
+#   "especialidad": "Ortodoncia",
+#   "nromatricula": "ORT-12345",
+#   "experienciaprofesional": "10 años"
+# }
+
+### 40. Actualizar Odontólogo (comentado - endpoint solo lectura, usar usuarios para editar)
+# PATCH {{baseUrl}}/usuarios/usuarios/96/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "telefono": "70123456"
+# }
+
+
+###############################################################################
+# 📊 AUDITORÍA (ADMIN)
+###############################################################################
+
+### 41. Listar Registros de Auditoría
+GET {{baseUrl}}/auditoria/?page=1&page_size=20
+Authorization: Token {{adminToken}}
+
+### 42. Filtrar Auditoría por Acción
+GET {{baseUrl}}/auditoria/?accion=CREATE&page=1
+Authorization: Token {{adminToken}}
+
+### 43. Filtrar Auditoría por Usuario
+GET {{baseUrl}}/auditoria/?usuario=1&page=1
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📈 REPORTES Y DASHBOARD (ADMIN)
+###############################################################################
+
+### 44. Dashboard General (estadísticas principales)
+GET {{baseUrl}}/dashboard/
+Authorization: Token {{adminToken}}
+
+### 45. Reporte de Citas
+GET {{baseUrl}}/dashboard/citas/?fecha_inicio=2025-01-01&fecha_fin=2025-12-31
+Authorization: Token {{adminToken}}
+
+### 46. Reporte de Ingresos
+GET {{baseUrl}}/dashboard/ingresos/?fecha_inicio=2025-01-01&fecha_fin=2025-12-31
+Authorization: Token {{adminToken}}
+
+### 47. Reporte de Pacientes
+GET {{baseUrl}}/dashboard/pacientes/?estado=activo
+Authorization: Token {{adminToken}}
+
+### 48. Reporte de Tratamientos
+GET {{baseUrl}}/dashboard/tratamientos/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📦 GESTIÓN DE INVENTARIO (ADMIN)
+###############################################################################
+
+### 49. Listar Productos del Inventario
+GET {{baseUrl}}/inventario/?page=1
+Authorization: Token {{adminToken}}
+
+### 50. Crear Producto (comentado - verifica campos del modelo primero)
+# POST {{baseUrl}}/inventario/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "nombre": "Guantes de látex",
+#   "categoria": "Material médico",
+#   "cantidad": 500,
+#   "precio_unitario": "0.50",
+#   "stock_minimo": 100
+# }
+
+### 51. Actualizar Stock (comentado)
+# PUT {{baseUrl}}/inventario/1/
+# Authorization: Token {{adminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "cantidad": 450
+# }
+
+### 52. Insumos con Stock Bajo (alertas)
+GET {{baseUrl}}/inventario/insumos/stock_bajo/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📝 NOTAS PARA ADMIN
+###############################################################################
+
+# ✅ Permisos del Administrador:
+# - Gestión completa de usuarios, pacientes, odontólogos
+# - Gestión de citas (crear, editar, cancelar, reprogramar)
+# - Gestión de servicios y tipos de consulta
+# - Gestión de pagos y facturación
+# - Acceso a historiales clínicos completos
+# - Gestión de planes de tratamiento y presupuestos
+# - Gestión de inventario
+# - Acceso a reportes y dashboard
+# - Auditoría completa del sistema
+#
+# 🔑 Credenciales por defecto:
+# - Email: admin@clinica.com
+# - Password: admin123
+#
+# 💡 Tips:
+# - Ejecuta el login primero (request #1)
+# - El token se captura automáticamente
+# - Los IDs de ejemplo pueden variar según tu BD
+# - Verifica los logs del servidor si hay errores

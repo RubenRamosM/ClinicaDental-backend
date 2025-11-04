@@ -1,0 +1,331 @@
+###############################################################################
+# 🗓️ FLUJO 2: GESTIÓN DE CITAS Y CONSULTAS
+###############################################################################
+#
+# OBJETIVO: Probar creación, listado, confirmación y cancelación de citas
+#
+# ESCENARIOS:
+#   1. Admin crea cita para paciente
+#   2. Paciente ve sus citas
+#   3. Ver horarios disponibles
+#   4. Confirmar cita
+#   5. Reprogramar cita
+#   6. Cancelar cita
+#   7. Marcar no-show
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. PREPARACIÓN - LOGIN
+###############################################################################
+
+### 1.1. Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 1.2. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+@pacienteId = {{loginPaciente.response.body.usuario.id}}
+
+###############################################################################
+# 2. VER HORARIOS Y TIPOS DE CONSULTA DISPONIBLES
+###############################################################################
+
+### 2.1. Listar todos los horarios
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminToken}}
+
+### 2.2. Listar tipos de consulta
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminToken}}
+
+### 2.3. Ver horarios disponibles para mañana
+GET {{baseUrl}}/citas/horarios/disponibles/?fecha=2025-11-04
+Authorization: Token {{adminToken}}
+
+### 2.4. Ver disponibilidad para fecha específica
+GET {{baseUrl}}/citas/consultas/disponibilidad/?fecha=2025-11-04
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 3. CREAR CITAS
+###############################################################################
+
+### 3.1. Admin crea cita para paciente
+# @name crearCita1
+POST {{baseUrl}}/citas/consultas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "fecha": "2025-11-04",
+  "codpaciente": {{pacienteId}},
+  "idhorario": 1,
+  "idtipoconsulta": 1,
+  "idestadoconsulta": 1,
+  "estado": "pendiente",
+  "tipo_consulta": "primera_vez",
+  "motivo_consulta": "Consulta general y limpieza"
+}
+
+@citaId1 = {{crearCita1.response.body.id}}
+
+### 3.2. Crear otra cita para el mismo paciente
+# @name crearCita2
+POST {{baseUrl}}/citas/consultas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "fecha": "2025-11-05",
+  "codpaciente": {{pacienteId}},
+  "idhorario": 2,
+  "idtipoconsulta": 2,
+  "idestadoconsulta": 1,
+  "estado": "pendiente",
+  "tipo_consulta": "control",
+  "motivo_consulta": "Control post-tratamiento"
+}
+
+@citaId2 = {{crearCita2.response.body.id}}
+
+###############################################################################
+# 4. LISTAR Y FILTRAR CITAS
+###############################################################################
+
+### 4.1. Listar todas las citas
+GET {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminToken}}
+
+### 4.2. Listar citas de hoy
+GET {{baseUrl}}/citas/consultas/hoy/
+Authorization: Token {{adminToken}}
+
+### 4.3. Listar citas pendientes
+GET {{baseUrl}}/citas/consultas/pendientes/
+Authorization: Token {{adminToken}}
+
+### 4.4. Filtrar citas por fecha
+GET {{baseUrl}}/citas/consultas/por-fecha/?fecha=2025-11-04
+Authorization: Token {{adminToken}}
+
+### 4.5. Paciente ve sus propias citas
+GET {{baseUrl}}/citas/consultas/mis_consultas/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 5. VER DETALLES DE UNA CITA
+###############################################################################
+
+### 5.1. Ver detalles de cita como Admin
+GET {{baseUrl}}/citas/consultas/{{citaId1}}/
+Authorization: Token {{adminToken}}
+
+### 5.2. Ver detalles de cita como Paciente
+GET {{baseUrl}}/citas/consultas/{{citaId1}}/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# 6. CONFIRMAR CITA
+###############################################################################
+
+### 6.1. Confirmar cita pendiente
+POST {{baseUrl}}/citas/consultas/{{citaId1}}/confirmar/
+Authorization: Token {{adminToken}}
+
+### 6.2. Verificar que cambió a confirmada
+GET {{baseUrl}}/citas/consultas/{{citaId1}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 7. ACTUALIZAR ESTADO DE CITA
+###############################################################################
+
+### 7.1. Actualizar estado a "en_consulta"
+PATCH {{baseUrl}}/citas/consultas/{{citaId1}}/actualizar_estado/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "estado": "en_consulta"
+}
+
+### 7.2. Actualizar estado a "completada"
+PATCH {{baseUrl}}/citas/consultas/{{citaId1}}/actualizar_estado/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "estado": "completada"
+}
+
+###############################################################################
+# 8. REPROGRAMAR CITA
+###############################################################################
+
+### 8.1. Reprogramar la cita 2 a otra fecha y horario
+PATCH {{baseUrl}}/citas/consultas/{{citaId2}}/reprogramar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "fecha": "2025-11-06",
+  "idhorario": 3
+}
+
+### 8.2. Verificar reprogramación
+GET {{baseUrl}}/citas/consultas/{{citaId2}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 9. CANCELAR CITA
+###############################################################################
+
+### 9.1. Cancelar cita con motivo
+POST {{baseUrl}}/citas/consultas/{{citaId2}}/cancelar/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "motivo_cancelacion": "Paciente solicitó cambio de horario"
+}
+
+### 9.2. Verificar cancelación
+GET {{baseUrl}}/citas/consultas/{{citaId2}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 10. CREAR CITA PARA PROBAR NO-SHOW
+###############################################################################
+
+### 10.1. Crear cita para marcar no-show
+# @name citaNoShow
+POST {{baseUrl}}/citas/consultas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "fecha": "2025-11-04",
+  "codpaciente": {{pacienteId}},
+  "idhorario": 4,
+  "idtipoconsulta": 1,
+  "idestadoconsulta": 2,
+  "estado": "confirmada",
+  "tipo_consulta": "primera_vez",
+  "motivo_consulta": "Cita para prueba de no-show"
+}
+
+@citaNoShowId = {{citaNoShow.response.body.id}}
+
+### 10.2. Marcar como no-show (paciente no asistió)
+POST {{baseUrl}}/citas/consultas/{{citaNoShowId}}/marcar-noshow/
+Authorization: Token {{adminToken}}
+
+### 10.3. Verificar que se marcó como no-show
+GET {{baseUrl}}/citas/consultas/{{citaNoShowId}}/
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 11. BUSCAR CITAS
+###############################################################################
+
+### 11.1. Buscar citas por nombre de paciente
+GET {{baseUrl}}/citas/consultas/?search=Juan
+Authorization: Token {{adminToken}}
+
+### 11.2. Filtrar por estado
+GET {{baseUrl}}/citas/consultas/?estado=pendiente
+Authorization: Token {{adminToken}}
+
+### 11.3. Filtrar por tipo de consulta
+GET {{baseUrl}}/citas/consultas/?idtipoconsulta=1
+Authorization: Token {{adminToken}}
+
+###############################################################################
+# 12. EDGE CASES
+###############################################################################
+
+### 12.1. Intentar crear cita en horario ocupado (debe fallar)
+POST {{baseUrl}}/citas/consultas/
+Content-Type: application/json
+Authorization: Token {{adminToken}}
+
+{
+  "fecha": "2025-11-04",
+  "codpaciente": {{pacienteId}},
+  "idhorario": 1,
+  "idtipoconsulta": 1,
+  "idestadoconsulta": 1,
+  "estado": "pendiente",
+  "tipo_consulta": "primera_vez",
+  "motivo_consulta": "Intentando duplicar horario"
+}
+
+### 12.2. Intentar confirmar cita ya confirmada
+POST {{baseUrl}}/citas/consultas/{{citaId1}}/confirmar/
+Authorization: Token {{adminToken}}
+
+### 12.3. Paciente intenta crear cita (puede estar permitido o no según permisos)
+POST {{baseUrl}}/citas/consultas/
+Content-Type: application/json
+Authorization: Token {{pacienteToken}}
+
+{
+  "fecha": "2025-11-07",
+  "codpaciente": {{pacienteId}},
+  "idhorario": 5,
+  "idtipoconsulta": 1,
+  "idestadoconsulta": 1,
+  "estado": "pendiente",
+  "tipo_consulta": "primera_vez",
+  "motivo_consulta": "Auto-agendamiento"
+}
+
+###############################################################################
+# 13. LOGOUT
+###############################################################################
+
+### 13.1. Logout Admin
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+### 13.2. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Horarios y tipos de consulta listados
+# ✅ Citas creadas exitosamente
+# ✅ Listado de citas funciona (todas, hoy, pendientes)
+# ✅ Paciente ve solo sus citas
+# ✅ Confirmación de cita cambia estado
+# ✅ Actualización de estado funciona
+# ✅ Reprogramación cambia fecha y horario
+# ✅ Cancelación marca motivo
+# ✅ No-show registrado correctamente
+# ✅ Búsqueda y filtros funcionan
+# ✅ Horario duplicado rechazado
+#
+###############################################################################

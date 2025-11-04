@@ -1,0 +1,8 @@
+# Dependencias para scripts de pruebas automatizadas
+# Instalar con: pip install -r requirements_pruebas.txt
+
+# Cliente HTTP para hacer peticiones
+requests==2.31.0
+
+# Para output bonito y colorido en consola (similar a DevTools)
+rich==13.7.0

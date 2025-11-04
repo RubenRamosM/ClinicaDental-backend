@@ -1,0 +1,569 @@
+###############################################################################
+# 🏥 CLÍNICA DENTAL - API REST Testing
+# Archivo de pruebas para REST Client (VS Code Extension)
+# Base URL: http://localhost:8001/api/v1
+###############################################################################
+
+# Variables globales
+@baseUrl = http://localhost:8001/api/v1
+@adminEmail = admin@clinica.com
+@adminPassword = admin123
+@pacienteEmail = paciente.prueba@clinica.com
+@pacientePassword = paciente123
+
+# OPCIÓN A: Captura automática (después del login)
+# OPCIÓN B: Token manual (descomenta y pega el token si la captura falla)
+# @adminToken = a2b68d86b5a5f3bf4a358c6ae2018401ab1c02e1
+# @pacienteToken = TU_TOKEN_AQUI
+
+
+###############################################################################
+# 🔐 AUTENTICACIÓN
+###############################################################################
+
+### 1. Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### Capturar token del admin
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 2. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{pacienteEmail}}",
+  "password": "{{pacientePassword}}"
+}
+
+### Capturar token del paciente
+@pacienteToken = {{loginPaciente.response.body.token}}
+
+### 3. Verificar Token
+GET {{baseUrl}}/auth/verificar-token/
+Authorization: Token {{adminToken}}
+
+### 4. Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+### 5. Cambiar Contraseña
+POST {{baseUrl}}/auth/cambiar-password/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "password_actual": "{{adminPassword}}",
+  "password_nuevo": "newpassword123",
+  "password_confirmacion": "newpassword123"
+}
+
+
+###############################################################################
+# 👥 USUARIOS Y PACIENTES
+###############################################################################
+
+### 6. Listar Usuarios (Paginado)
+GET {{baseUrl}}/usuarios/?page=1&page_size=10
+Authorization: Token {{adminToken}}
+
+### 7. Crear Usuario
+POST {{baseUrl}}/usuarios/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "correoelectronico": "juan.perez@example.com",
+  "sexo": "M",
+  "telefono": "70123456",
+  "idtipousuario": 1,
+  "password": "password123",
+  "paciente_data": {
+    "carnetidentidad": "12345678",
+    "fechanacimiento": "1990-05-15",
+    "direccion": "Av. Principal #123"
+  }
+}
+
+### 8. Obtener Usuario por ID
+GET {{baseUrl}}/usuarios/130/
+Authorization: Token {{adminToken}}
+
+### 9. Actualizar Usuario
+PUT {{baseUrl}}/usuarios/130/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Juan Actualizado",
+  "apellido": "Pérez",
+  "telefono": "70999888"
+}
+
+### 10. Eliminar Usuario
+DELETE {{baseUrl}}/usuarios/130/
+Authorization: Token {{adminToken}}
+
+### 11. Listar Pacientes
+GET {{baseUrl}}/usuarios/pacientes/?page=1
+Authorization: Token {{adminToken}}
+
+### 12. Perfil del Paciente Autenticado
+GET {{baseUrl}}/usuarios/mi-perfil/
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 📅 CITAS Y CONSULTAS
+###############################################################################
+
+### 13. Listar Citas
+GET {{baseUrl}}/citas/?page=1
+Authorization: Token {{adminToken}}
+
+### 14. Crear Cita
+POST {{baseUrl}}/citas/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "fecha": "2025-11-10",
+  "codpaciente": 131,
+  "cododontologo": 105,
+  "idhorario": 2,
+  "idtipoconsulta": 10,
+  "idestadoconsulta": 1
+}
+
+### 15. Obtener Cita por ID
+GET {{baseUrl}}/citas/127/
+Authorization: Token {{adminToken}}
+
+### 16. Actualizar Cita
+PUT {{baseUrl}}/citas/127/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "idestadoconsulta": 2,
+  "diagnostico": "Caries leve en molar inferior"
+}
+
+### 17. Reprogramar Cita
+POST {{baseUrl}}/citas/127/reprogramar/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nueva_fecha": "2025-11-15",
+  "nuevo_horario": 5,
+  "motivo": "Solicitud del paciente"
+}
+
+### 18. Cancelar Cita
+POST {{baseUrl}}/citas/127/cancelar/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "motivo": "Emergencia familiar"
+}
+
+### 19. Horarios Disponibles
+GET {{baseUrl}}/citas/horarios-disponibles/?fecha=2025-11-10&odontologo_id=105
+Authorization: Token {{pacienteToken}}
+
+### 20. Mis Citas (Paciente)
+GET {{baseUrl}}/citas/mis-citas/
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 💊 SERVICIOS Y ADMINISTRACIÓN
+###############################################################################
+
+### 21. Listar Servicios (Catálogo)
+GET {{baseUrl}}/administracion/servicios/?page=1&page_size=10
+Authorization: Token {{adminToken}}
+
+### 22. Crear Servicio
+POST {{baseUrl}}/administracion/servicios/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Blanqueamiento Dental",
+  "descripcion": "Tratamiento estético de blanqueamiento",
+  "costobase": "500.00",
+  "duracion": "01:30:00",
+  "activo": true
+}
+
+### 23. Actualizar Servicio
+PUT {{baseUrl}}/administracion/servicios/9/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Blanqueamiento Premium",
+  "costobase": "650.00"
+}
+
+### 24. Listar Tipos de Consulta
+GET {{baseUrl}}/administracion/tipos-consulta/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 💳 PAGOS Y FACTURAS
+###############################################################################
+
+### 25. Listar Pagos
+GET {{baseUrl}}/pagos/?page=1
+Authorization: Token {{adminToken}}
+
+### 26. Crear Pago
+POST {{baseUrl}}/pagos/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "idconsulta": 127,
+  "monto": "150.00",
+  "metodopago": "Efectivo",
+  "estado": "completado"
+}
+
+### 27. Obtener Pago por ID
+GET {{baseUrl}}/pagos/1/
+Authorization: Token {{adminToken}}
+
+### 28. Historial de Pagos del Paciente
+GET {{baseUrl}}/pagos/historial-paciente/131/
+Authorization: Token {{adminToken}}
+
+### 29. Registrar Pago con Stripe
+POST {{baseUrl}}/pagos/procesar-stripe/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "idconsulta": 127,
+  "monto": "200.00",
+  "payment_method_id": "pm_card_visa"
+}
+
+
+###############################################################################
+# 📋 HISTORIAL CLÍNICO
+###############################################################################
+
+### 30. Obtener Historial del Paciente
+GET {{baseUrl}}/historial-clinico/paciente/131/
+Authorization: Token {{adminToken}}
+
+### 31. Crear Documento Clínico
+POST {{baseUrl}}/historial-clinico/documentos/
+Authorization: Token {{adminToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="idconsulta"
+
+127
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="tipodocumento"
+
+Radiografía
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="descripcion"
+
+Radiografía panorámica de control
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="archivo"; filename="radiografia.pdf"
+Content-Type: application/pdf
+
+(binary content)
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 32. Listar Documentos del Paciente
+GET {{baseUrl}}/historial-clinico/paciente/131/documentos/
+Authorization: Token {{adminToken}}
+
+### 33. Descargar Documento
+GET {{baseUrl}}/historial-clinico/documentos/1/descargar/
+Authorization: Token {{adminToken}}
+
+### 34. Odontograma del Paciente
+GET {{baseUrl}}/historial-clinico/paciente/131/odontograma/
+Authorization: Token {{adminToken}}
+
+### 35. Actualizar Diente en Odontograma
+PUT {{baseUrl}}/historial-clinico/odontograma/1/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "estado": "Cariado",
+  "observaciones": "Caries superficial en cara oclusal"
+}
+
+
+###############################################################################
+# 💰 PLANES DE TRATAMIENTO Y PRESUPUESTOS
+###############################################################################
+
+### 36. Listar Planes de Tratamiento
+GET {{baseUrl}}/tratamientos/planes/?page=1
+Authorization: Token {{adminToken}}
+
+### 37. Crear Plan de Tratamiento
+POST {{baseUrl}}/tratamientos/planes/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "paciente": 131,
+  "odontologo": 105,
+  "diagnostico": "Necesita ortodoncia",
+  "observaciones": "Tratamiento estimado 18 meses",
+  "estado": "propuesto"
+}
+
+### 38. Obtener Plan por ID
+GET {{baseUrl}}/tratamientos/planes/1/
+Authorization: Token {{adminToken}}
+
+### 39. Listar Presupuestos
+GET {{baseUrl}}/presupuestos-digitales/?page=1
+Authorization: Token {{adminToken}}
+
+### 40. Crear Presupuesto
+POST {{baseUrl}}/presupuestos-digitales/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": 1,
+  "fecha_vencimiento": "2025-12-31",
+  "descuento": "50.00",
+  "notas": "Descuento por pago anticipado"
+}
+
+### 41. Mis Presupuestos (Paciente)
+GET {{baseUrl}}/presupuestos-digitales/mis-presupuestos/
+Authorization: Token {{pacienteToken}}
+
+### 42. Aprobar Presupuesto
+POST {{baseUrl}}/presupuestos-digitales/1/aprobar/
+Authorization: Token {{pacienteToken}}
+
+### 43. Rechazar Presupuesto
+POST {{baseUrl}}/presupuestos-digitales/1/rechazar/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "motivo": "Costo muy elevado"
+}
+
+### 44. Agregar Item al Presupuesto
+POST {{baseUrl}}/presupuestos-digitales/1/agregar-item/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "servicio": 9,
+  "cantidad": 1,
+  "precio_unitario": "500.00"
+}
+
+
+###############################################################################
+# 👨‍⚕️ PROFESIONALES
+###############################################################################
+
+### 45. Listar Odontólogos
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminToken}}
+
+### 46. Obtener Odontólogo por ID
+GET {{baseUrl}}/profesionales/odontologos/105/
+Authorization: Token {{adminToken}}
+
+### 47. Crear Odontólogo
+POST {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "usuario": {
+    "nombre": "María",
+    "apellido": "González",
+    "correoelectronico": "maria.gonzalez@clinica.com",
+    "sexo": "F",
+    "telefono": "71234567",
+    "idtipousuario": 3,
+    "password": "password123"
+  },
+  "especialidad": "Ortodoncia",
+  "nromatricula": "ORT-12345",
+  "experienciaprofesional": "10 años"
+}
+
+### 48. Actualizar Odontólogo
+PUT {{baseUrl}}/profesionales/odontologos/105/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "especialidad": "Ortodoncia y Periodoncia",
+  "experienciaprofesional": "15 años"
+}
+
+
+###############################################################################
+# 📊 AUDITORÍA Y BITÁCORA
+###############################################################################
+
+### 49. Listar Registros de Auditoría
+GET {{baseUrl}}/auditoria/?page=1&page_size=20
+Authorization: Token {{adminToken}}
+
+### 50. Filtrar Auditoría por Acción
+GET {{baseUrl}}/auditoria/?accion=CREATE&page=1
+Authorization: Token {{adminToken}}
+
+### 51. Filtrar Auditoría por Usuario
+GET {{baseUrl}}/auditoria/?usuario=105&page=1
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📈 DASHBOARD ADMINISTRATIVO
+###############################################################################
+
+### 52. Estadísticas del Dashboard
+GET {{baseUrl}}/dashboard/estadisticas/
+Authorization: Token {{adminToken}}
+
+### 53. Reporte de Citas
+GET {{baseUrl}}/reportes/citas/?fecha_inicio=2025-01-01&fecha_fin=2025-12-31
+Authorization: Token {{adminToken}}
+
+### 54. Reporte de Ingresos
+GET {{baseUrl}}/reportes/ingresos/?fecha_inicio=2025-01-01&fecha_fin=2025-12-31
+Authorization: Token {{adminToken}}
+
+### 55. Reporte de Pacientes
+GET {{baseUrl}}/reportes/pacientes/?estado=activo
+Authorization: Token {{adminToken}}
+
+### 56. Top Servicios Más Solicitados
+GET {{baseUrl}}/reportes/servicios-top/?limite=10
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📦 INVENTARIO
+###############################################################################
+
+### 57. Listar Productos del Inventario
+GET {{baseUrl}}/inventario/?page=1
+Authorization: Token {{adminToken}}
+
+### 58. Crear Producto
+POST {{baseUrl}}/inventario/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Guantes de látex",
+  "categoria": "Material médico",
+  "cantidad": 500,
+  "precio_unitario": "0.50",
+  "stock_minimo": 100
+}
+
+### 59. Actualizar Stock
+PUT {{baseUrl}}/inventario/1/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "cantidad": 450
+}
+
+### 60. Alertas de Stock Bajo
+GET {{baseUrl}}/inventario/alertas-stock/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 🧪 ENDPOINTS DE PRUEBA Y VALIDACIÓN
+###############################################################################
+
+### 61. Health Check
+GET {{baseUrl}}/auth/health/
+
+### 62. Test de Conexión sin Auth
+GET {{baseUrl}}/administracion/servicios/
+
+### 63. Test de Error 404
+GET {{baseUrl}}/endpoint-inexistente/
+Authorization: Token {{adminToken}}
+
+### 64. Test de Error 401 (Sin token)
+GET {{baseUrl}}/citas/
+
+### 65. Test de Paginación
+GET {{baseUrl}}/usuarios/?page=1&page_size=5
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 📝 NOTAS IMPORTANTES
+###############################################################################
+
+# 1. **Autenticación:**
+#    - El sistema usa Token Authentication (DRF)
+#    - Header format: `Authorization: Token <token>`
+#    - Los tokens se obtienen vía POST /auth/login/
+#
+# 2. **Estructura de Respuestas:**
+#    - Listas paginadas: { "count": N, "next": "url", "previous": "url", "results": [...] }
+#    - Objeto individual: { "id": N, "campo1": "valor", ... }
+#    - Error: { "detail": "mensaje" } o { "error": "mensaje" }
+#
+# 3. **Códigos HTTP Comunes:**
+#    - 200 OK: Operación exitosa
+#    - 201 Created: Recurso creado
+#    - 204 No Content: Eliminación exitosa
+#    - 400 Bad Request: Datos inválidos
+#    - 401 Unauthorized: Sin autenticación
+#    - 403 Forbidden: Sin permisos
+#    - 404 Not Found: Recurso no existe
+#    - 500 Internal Server Error: Error del servidor
+#
+# 4. **IDs de Ejemplo (de poblar_base_completa.py):**
+#    - Admin: codigo=105, email=admin@clinica.com
+#    - Paciente de prueba: codigo=134, email=paciente.prueba@clinica.com
+#    - Odontólogo: codigo=105 (Dr. Carlos Mendoza)
+#    - Servicios: IDs 9-24
+#    - Tipos de consulta: IDs 9-24
+#
+# 5. **Testing Tips:**
+#    - Ejecuta primero el login para obtener el token
+#    - Usa @name para capturar respuestas y referencias
+#    - Cambia los IDs según tu base de datos
+#    - Verifica los logs del servidor Django para debug

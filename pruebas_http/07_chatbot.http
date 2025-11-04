@@ -1,0 +1,683 @@
+###############################################################################
+# 📋 FLUJO 7: CHATBOT CONVERSACIONAL
+###############################################################################
+#
+# OBJETIVO: Probar chatbot para ver citas y reservar citas
+#
+# ESCENARIOS:
+#   1. Conversación inicial - Saludo
+#   2. Ver citas existentes
+#   3. Reservar nueva cita (flujo multi-paso)
+#   4. Consultar horarios disponibles
+#   5. Cancelar cita
+#   6. Ayuda y despedida
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+
+###############################################################################
+# 1. PREPARACIÓN - LOGIN PACIENTE
+###############################################################################
+
+### 1.1. Login Paciente
+# @name loginPaciente
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "paciente1@test.com",
+  "password": "paciente123"
+}
+
+@pacienteToken = {{loginPaciente.response.body.token}}
+@pacienteId = {{loginPaciente.response.body.usuario.id}}
+@pacienteEmail = paciente1@test.com
+
+###############################################################################
+# 2. INICIO DE CONVERSACIÓN - SALUDO
+###############################################################################
+
+### 2.1. Enviar saludo inicial
+# @name saludoInicial
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Hola",
+  "session_id": "test-session-001",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+@sessionId = test-session-001
+
+### 2.2. Saludo variante
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Buenos días",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 2.3. Saludo informal
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Hola! ¿Qué tal?",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 3. PEDIR AYUDA
+###############################################################################
+
+### 3.1. Solicitar ayuda
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "ayuda",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 3.2. Variante de ayuda
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "¿Qué puedes hacer?",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 4. VER CITAS EXISTENTES
+###############################################################################
+
+### 4.1. Solicitar ver citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero ver mis citas",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 4.2. Variante - mis consultas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "mostrar mis consultas",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 4.3. Variante - listar citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "lista de citas",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 5. CONSULTAR HORARIOS DISPONIBLES
+###############################################################################
+
+### 5.1. Solicitar horarios disponibles
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "¿Qué horarios tienen disponibles?",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 5.2. Variante - disponibilidad
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "cuándo hay disponibilidad",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 6. RESERVAR CITA - FLUJO COMPLETO
+###############################################################################
+
+### 6.1. PASO 1: Iniciar reserva de cita
+# @name iniciarReserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero reservar una cita",
+  "session_id": "reserva-session-001",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+@reservaSessionId = reserva-session-001
+
+### 6.2. PASO 2: Proporcionar fecha (mañana)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "mañana",
+  "session_id": "{{reservaSessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 6.3. PASO 3: Seleccionar horario
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "1",
+  "session_id": "{{reservaSessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 6.4. PASO 4: Seleccionar tipo de consulta
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "1",
+  "session_id": "{{reservaSessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 6.5. PASO 5: Confirmar cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "sí",
+  "session_id": "{{reservaSessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 7. RESERVAR CITA - FLUJO CON FECHA ESPECÍFICA
+###############################################################################
+
+### 7.1. Iniciar nueva reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "agendar cita",
+  "session_id": "reserva-session-002",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 7.2. Proporcionar fecha específica (DD/MM/YYYY)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "05/11/2025",
+  "session_id": "reserva-session-002",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 7.3. Seleccionar horario 2
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "2",
+  "session_id": "reserva-session-002",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 7.4. Seleccionar tipo de consulta (control)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "2",
+  "session_id": "reserva-session-002",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 7.5. Confirmar
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "confirmar",
+  "session_id": "reserva-session-002",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 8. RESERVAR CITA - FLUJO CON PALABRAS NATURALES
+###############################################################################
+
+### 8.1. Iniciar reserva con "pasado mañana"
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "reservar para pasado mañana",
+  "session_id": "reserva-session-003",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 8.2. Bot solicita horario - seleccionar 3
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "3",
+  "session_id": "reserva-session-003",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 8.3. Seleccionar tipo urgencia
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "3",
+  "session_id": "reserva-session-003",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 8.4. Confirmar cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "sí, confirmo",
+  "session_id": "reserva-session-003",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 9. CANCELAR RESERVA EN PROGRESO
+###############################################################################
+
+### 9.1. Iniciar reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero una cita",
+  "session_id": "cancelar-session-001",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 9.2. Cancelar durante el proceso
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "no",
+  "session_id": "cancelar-session-001",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 9.3. Verificar que se canceló
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "ayuda",
+  "session_id": "cancelar-session-001",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 10. CANCELAR CITA EXISTENTE
+###############################################################################
+
+### 10.1. Solicitar cancelar cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero cancelar una cita",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 10.2. Variante - eliminar cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "eliminar mi consulta",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 11. VER HISTORIAL DE CONVERSACIÓN
+###############################################################################
+
+### 11.1. Obtener historial de la sesión principal
+GET {{baseUrl}}/chatbot/historial/?session_id={{sessionId}}
+
+### 11.2. Obtener historial de sesión de reserva
+GET {{baseUrl}}/chatbot/historial/?session_id={{reservaSessionId}}
+
+### 11.3. Obtener historial de sesión cancelada
+GET {{baseUrl}}/chatbot/historial/?session_id=cancelar-session-001
+
+###############################################################################
+# 12. RESET DE CONVERSACIÓN
+###############################################################################
+
+### 12.1. Resetear contexto de sesión principal
+POST {{baseUrl}}/chatbot/reset/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}"
+}
+
+### 12.2. Verificar que contexto se limpió
+GET {{baseUrl}}/chatbot/historial/?session_id={{sessionId}}
+
+### 12.3. Enviar mensaje después de reset
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Hola de nuevo",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 13. DESPEDIDA
+###############################################################################
+
+### 13.1. Despedirse del bot
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "adiós",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 13.2. Variante - chao
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "chao, gracias",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 13.3. Variante - hasta luego
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "hasta luego",
+  "session_id": "{{sessionId}}",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 14. EDGE CASES
+###############################################################################
+
+### 14.1. Mensaje sin sentido
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "asdfghjkl",
+  "session_id": "edge-case-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 14.2. Mensaje vacío
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "",
+  "session_id": "edge-case-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 14.3. Fecha inválida en reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero cita",
+  "session_id": "fecha-invalida-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 14.4. Proporcionar fecha pasada
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "01/01/2020",
+  "session_id": "fecha-invalida-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 14.5. Seleccionar horario inexistente
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "agendar cita",
+  "session_id": "horario-invalido-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 14.6. Fecha válida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "mañana",
+  "session_id": "horario-invalido-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 14.7. Número de horario inválido
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "999",
+  "session_id": "horario-invalido-session",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 15. USUARIO NO REGISTRADO
+###############################################################################
+
+### 15.1. Usuario nuevo intenta reservar
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero reservar cita",
+  "session_id": "nuevo-usuario-session",
+  "correo_electronico": "nuevousuario@test.com",
+  "nombre": "Carlos Nuevo",
+  "telefono": "987654321"
+}
+
+### 15.2. Usuario nuevo solicita ver citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "ver mis citas",
+  "session_id": "nuevo-usuario-session",
+  "correo_electronico": "nuevousuario@test.com"
+}
+
+###############################################################################
+# 16. MÚLTIPLES SESIONES SIMULTÁNEAS
+###############################################################################
+
+### 16.1. Sesión A - Usuario 1
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Hola",
+  "session_id": "session-A",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 16.2. Sesión B - Usuario 2
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Buenos días",
+  "session_id": "session-B",
+  "correo_electronico": "paciente2@test.com"
+}
+
+### 16.3. Sesión A - Iniciar reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "reservar cita",
+  "session_id": "session-A",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 16.4. Sesión B - Ver citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "ver mis citas",
+  "session_id": "session-B",
+  "correo_electronico": "paciente2@test.com"
+}
+
+### 16.5. Verificar que las sesiones están separadas
+GET {{baseUrl}}/chatbot/historial/?session_id=session-A
+
+### 16.6. Verificar sesión B
+GET {{baseUrl}}/chatbot/historial/?session_id=session-B
+
+###############################################################################
+# 17. CONVERSACIÓN LARGA Y CAMBIO DE CONTEXTO
+###############################################################################
+
+### 17.1. Conversación compleja - Inicio
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "Hola",
+  "session_id": "conversacion-larga",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 17.2. Pedir ayuda
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "ayuda",
+  "session_id": "conversacion-larga",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 17.3. Ver citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "mostrar citas",
+  "session_id": "conversacion-larga",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 17.4. Consultar horarios
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "horarios disponibles",
+  "session_id": "conversacion-larga",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 17.5. Iniciar reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "quiero agendar",
+  "session_id": "conversacion-larga",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+### 17.6. Cambiar de opinión y despedirse
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "mensaje": "no, mejor otro día. Adiós",
+  "session_id": "conversacion-larga",
+  "correo_electronico": "{{pacienteEmail}}"
+}
+
+###############################################################################
+# 18. LOGOUT
+###############################################################################
+
+### 18.1. Logout Paciente
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+###############################################################################
+# ✅ RESULTADO ESPERADO
+###############################################################################
+#
+# ✅ Bot responde a saludos correctamente
+# ✅ Bot proporciona ayuda cuando se solicita
+# ✅ Bot muestra citas existentes del paciente
+# ✅ Bot muestra horarios disponibles
+# ✅ Flujo de reserva multi-paso funciona (fecha → horario → tipo → confirmar)
+# ✅ Bot entiende "mañana", "pasado mañana", DD/MM/YYYY
+# ✅ Bot permite cancelar reserva en progreso
+# ✅ Bot responde a despedidas
+# ✅ Historial de conversación se guarda correctamente
+# ✅ Reset de contexto funciona
+# ✅ Edge cases manejados (mensajes vacíos, fechas inválidas, horarios inexistentes)
+# ✅ Usuarios no registrados reciben mensaje apropiado
+# ✅ Múltiples sesiones simultáneas son independientes
+# ✅ Conversaciones largas mantienen contexto
+# ✅ Intent detection funciona para todos los casos
+#
+###############################################################################

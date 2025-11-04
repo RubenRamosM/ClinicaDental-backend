@@ -1,0 +1,327 @@
+###############################################################################
+# 🤖 PRUEBAS API - CHATBOT DE CITAS
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+@sessionId = test-session-{{$timestamp}}
+
+###############################################################################
+# 1. CONVERSACIÓN BÁSICA
+###############################################################################
+
+### 1.1. Saludo inicial
+# @name saludo
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Hola"
+}
+
+### 1.2. Pedir ayuda
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "ayuda"
+}
+
+###############################################################################
+# 2. VER CITAS (requiere paciente registrado)
+###############################################################################
+
+### 2.1. Ver citas SIN correo (debe pedir autenticación)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Ver mis citas"
+}
+
+### 2.2. Proporcionar correo y nombre
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Ver mis citas",
+  "correo_electronico": "paciente1@test.com",
+  "nombre": "Juan Pérez",
+  "telefono": "77777777"
+}
+
+###############################################################################
+# 3. FLUJO COMPLETO DE RESERVA DE CITA
+###############################################################################
+
+### 3.1. Iniciar reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-reserva-{{$timestamp}}",
+  "mensaje": "Quiero reservar una cita",
+  "correo_electronico": "paciente1@test.com",
+  "nombre": "María López"
+}
+
+### 3.2. Proporcionar fecha (mañana)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-reserva-{{$timestamp}}",
+  "mensaje": "mañana"
+}
+
+### 3.3. Seleccionar horario (opción 1)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-reserva-{{$timestamp}}",
+  "mensaje": "1"
+}
+
+### 3.4. Seleccionar tipo de consulta (opción 1)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-reserva-{{$timestamp}}",
+  "mensaje": "1"
+}
+
+### 3.5. Confirmar cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-reserva-{{$timestamp}}",
+  "mensaje": "sí"
+}
+
+###############################################################################
+# 4. HORARIOS DISPONIBLES
+###############################################################################
+
+### 4.1. Consultar horarios disponibles
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Horarios disponibles"
+}
+
+### 4.2. Horarios para fecha específica
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Horarios disponibles para el 05/11/2025"
+}
+
+###############################################################################
+# 5. CANCELAR CITA
+###############################################################################
+
+### 5.1. Solicitar cancelación
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancelar-{{$timestamp}}",
+  "mensaje": "Cancelar cita",
+  "correo_electronico": "paciente1@test.com",
+  "nombre": "Juan Pérez"
+}
+
+### 5.2. Seleccionar cita a cancelar (opción 1)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancelar-{{$timestamp}}",
+  "mensaje": "1"
+}
+
+###############################################################################
+# 6. HISTORIAL DE CONVERSACIÓN
+###############################################################################
+
+### 6.1. Ver historial de sesión
+GET {{baseUrl}}/chatbot/historial/?session_id={{sessionId}}
+
+###############################################################################
+# 7. REINICIAR CONVERSACIÓN
+###############################################################################
+
+### 7.1. Resetear contexto
+POST {{baseUrl}}/chatbot/reset/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}"
+}
+
+###############################################################################
+# 8. DESPEDIDA
+###############################################################################
+
+### 8.1. Despedida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Gracias, adiós"
+}
+
+###############################################################################
+# 9. MENSAJES NO ENTENDIDOS
+###############################################################################
+
+### 9.1. Mensaje desconocido
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "xyz123 mensaje aleatorio que no debería entender"
+}
+
+###############################################################################
+# 10. CASOS EDGE
+###############################################################################
+
+### 10.1. Fecha inválida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-edge-{{$timestamp}}",
+  "mensaje": "Quiero cita",
+  "correo_electronico": "paciente1@test.com"
+}
+
+### 10.2. Proporcionar fecha inválida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-edge-{{$timestamp}}",
+  "mensaje": "abc123"
+}
+
+### 10.3. Fecha pasada
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-edge-2-{{$timestamp}}",
+  "mensaje": "Reservar cita",
+  "correo_electronico": "paciente1@test.com"
+}
+
+### 10.4. Proporcionar fecha pasada
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-edge-2-{{$timestamp}}",
+  "mensaje": "01/01/2020"
+}
+
+###############################################################################
+# 11. FLUJO CANCELADO POR USUARIO
+###############################################################################
+
+### 11.1. Iniciar reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancel-{{$timestamp}}",
+  "mensaje": "Reservar",
+  "correo_electronico": "paciente1@test.com"
+}
+
+### 11.2. Dar fecha
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancel-{{$timestamp}}",
+  "mensaje": "mañana"
+}
+
+### 11.3. Seleccionar horario
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancel-{{$timestamp}}",
+  "mensaje": "1"
+}
+
+### 11.4. Seleccionar tipo
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancel-{{$timestamp}}",
+  "mensaje": "1"
+}
+
+### 11.5. Rechazar confirmación
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "session-cancel-{{$timestamp}}",
+  "mensaje": "no"
+}
+
+###############################################################################
+# 📋 DOCUMENTACIÓN
+###############################################################################
+
+# ENDPOINTS DISPONIBLES:
+# 
+# POST /api/v1/chatbot/mensaje/
+#   - Enviar mensaje al chatbot
+#   - Body: { session_id, mensaje, correo_electronico?, nombre?, telefono? }
+#   - Response: { mensaje, opciones?, intent, metadata? }
+#
+# GET /api/v1/chatbot/historial/?session_id=xxx
+#   - Ver historial de conversación
+#
+# POST /api/v1/chatbot/reset/
+#   - Reiniciar conversación (limpiar contexto)
+#   - Body: { session_id }
+#
+# INTENTS SOPORTADOS:
+#   - saludo: Saludar al bot
+#   - ver_citas: Ver citas del paciente
+#   - reservar_cita: Flujo completo de reserva
+#   - cancelar_cita: Cancelar cita existente
+#   - horarios_disponibles: Ver horarios libres
+#   - ayuda: Mostrar opciones
+#   - despedida: Terminar conversación
+#
+# FLUJO DE RESERVA (4 PASOS):
+#   1. Solicitar fecha (DD/MM/YYYY o "mañana", "pasado mañana")
+#   2. Seleccionar horario (número de lista)
+#   3. Seleccionar tipo de consulta (número de lista)
+#   4. Confirmar ("sí" o "no")
+#
+# NOTAS:
+#   - session_id debe ser único por conversación
+#   - correo_electronico vincula con paciente existente
+#   - Sin correo, funciones limitadas (solo info general)
+#   - Contexto se mantiene durante toda la sesión

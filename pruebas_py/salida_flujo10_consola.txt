@@ -1,0 +1,859 @@
+﻿============================================================
+FLUJO 10: PRUEBAS DE INTEGRACION CON STRIPE - PRESUPUESTOS
+============================================================
+
+=== SECCION 1: AUTENTICACION DE USUARIOS ===
+
+[1.1] Login como Administrador
+
+[1;36mÔòÉÔòÉÔòÉ Login como administrador ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/auth/login/[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m correo: string [1m([0mlongitud: [1;36m17[0m[1m)[0m = [32m"admin@clinica.com"[0m
+[1m[[0mSTR[1m][0m password: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"admin123"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"correo"[0m: [32m"admin@clinica.com"[0m,
+  [32m"password"[0m: [32m"admin123"[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+
+[1;36mÔòÉÔòÉÔòÉ Respuesta login admin ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/auth/login/[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m correo: string [1m([0mlongitud: [1;36m17[0m[1m)[0m = [32m"admin@clinica.com"[0m
+[1m[[0mSTR[1m][0m password: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"admin123"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"correo"[0m: [32m"admin@clinica.com"[0m,
+  [32m"password"[0m: [32m"admin123"[0m
+[1m}[0m
+
+[1;32m[[0m[1;32mRESP[0m[1;32m][0m[1;32m RESPONSE[0m
+[32mÔ£à Status: [0m[1;32m200[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m3[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m mensaje: string [1m([0mlongitud: [1;36m13[0m[1m)[0m = [32m"Login exitoso"[0m
+[1m[[0mOBJ[1m][0m usuario: object [1m([0m[1;36m13[0m propiedades[1m)[0m
+  [1m[[0mNUM[1m][0m codigo: integer = [1;36m636[0m
+  [1m[[0mSTR[1m][0m nombre: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"Admin"[0m
+  [1m[[0mSTR[1m][0m apellido: string [1m([0mlongitud: [1;36m7[0m[1m)[0m = [32m"Sistema"[0m
+  [1m[[0mSTR[1m][0m correoelectronico: string [1m([0mlongitud: [1;36m17[0m[1m)[0m = [32m"admin@clinica.com"[0m
+  [1m[[0mSTR[1m][0m sexo: string [1m([0mlongitud: [1;36m1[0m[1m)[0m = [32m"M"[0m
+  [1m[[0mSTR[1m][0m telefono: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"70000000"[0m
+  [1m[[0mNUM[1m][0m idtipousuario: integer = [1;36m197[0m
+  [1m[[0mSTR[1m][0m tipo_usuario_nombre: string [1m([0mlongitud: [1;36m13[0m[1m)[0m = [32m"Administrador"[0m
+  [1m[[0mSTR[1m][0m nombre_completo: string [1m([0mlongitud: [1;36m13[0m[1m)[0m = [32m"Admin Sistema"[0m
+  [1m[[0mNUM[1m][0m recibir_notificaciones: integer = [3;92mTrue[0m
+  [1m[[0mNUM[1m][0m notificaciones_email: integer = [3;92mTrue[0m
+  [1m[[0mNUM[1m][0m notificaciones_push: integer = [3;91mFalse[0m
+  [1m[[0mNULL[1m][0m paciente: null
+[1m[[0mSTR[1m][0m token: string [1m([0mlongitud: [1;36m40[0m[1m)[0m = [32m"1a8268aaf46769b147ae9ce0d799f31bf6fc2492"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"mensaje"[0m: [32m"Login exitoso"[0m,
+  [32m"usuario"[0m: [1m{[0m
+    [32m"codigo"[0m: [1;36m636[0m,
+    [32m"nombre"[0m: [32m"Admin"[0m,
+    [32m"apellido"[0m: [32m"Sistema"[0m,
+    [32m"correoelectronico"[0m: [32m"admin@clinica.com"[0m,
+    [32m"sexo"[0m: [32m"M"[0m,
+    [32m"telefono"[0m: [32m"70000000"[0m,
+    [32m"idtipousuario"[0m: [1;36m197[0m,
+    [32m"tipo_usuario_nombre"[0m: [32m"Administrador"[0m,
+    [32m"nombre_completo"[0m: [32m"Admin Sistema"[0m,
+    [32m"recibir_notificaciones"[0m: true,
+    [32m"notificaciones_email"[0m: true,
+    [32m"notificaciones_push"[0m: false,
+    [32m"paciente"[0m: null
+  [1m}[0m,
+  [32m"token"[0m: [32m"1a8268aaf46769b147ae9ce0d799f31bf6fc2492"[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+Ô£ô Admin autenticado
+
+[1.2] Login como Paciente
+
+[1;36mÔòÉÔòÉÔòÉ Login como paciente ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/auth/login/[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m correo: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"ana.lopez@email.com"[0m
+[1m[[0mSTR[1m][0m password: string [1m([0mlongitud: [1;36m11[0m[1m)[0m = [32m"paciente123"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"correo"[0m: [32m"ana.lopez@email.com"[0m,
+  [32m"password"[0m: [32m"paciente123"[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+
+[1;36mÔòÉÔòÉÔòÉ Respuesta login paciente ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/auth/login/[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m correo: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"ana.lopez@email.com"[0m
+[1m[[0mSTR[1m][0m password: string [1m([0mlongitud: [1;36m11[0m[1m)[0m = [32m"paciente123"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"correo"[0m: [32m"ana.lopez@email.com"[0m,
+  [32m"password"[0m: [32m"paciente123"[0m
+[1m}[0m
+
+[1;32m[[0m[1;32mRESP[0m[1;32m][0m[1;32m RESPONSE[0m
+[32mÔ£à Status: [0m[1;32m200[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m3[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m mensaje: string [1m([0mlongitud: [1;36m13[0m[1m)[0m = [32m"Login exitoso"[0m
+[1m[[0mOBJ[1m][0m usuario: object [1m([0m[1;36m13[0m propiedades[1m)[0m
+  [1m[[0mNUM[1m][0m codigo: integer = [1;36m641[0m
+  [1m[[0mSTR[1m][0m nombre: string [1m([0mlongitud: [1;36m3[0m[1m)[0m = [32m"Ana"[0m
+  [1m[[0mSTR[1m][0m apellido: string [1m([0mlongitud: [1;36m15[0m[1m)[0m = [32m"L├│pez Fern├índez"[0m
+  [1m[[0mSTR[1m][0m correoelectronico: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"ana.lopez@email.com"[0m
+  [1m[[0mSTR[1m][0m sexo: string [1m([0mlongitud: [1;36m1[0m[1m)[0m = [32m"F"[0m
+  [1m[[0mSTR[1m][0m telefono: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"77777777"[0m
+  [1m[[0mNUM[1m][0m idtipousuario: integer = [1;36m200[0m
+  [1m[[0mSTR[1m][0m tipo_usuario_nombre: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"Paciente"[0m
+  [1m[[0mSTR[1m][0m nombre_completo: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Ana L├│pez Fern├índez"[0m
+  [1m[[0mNUM[1m][0m recibir_notificaciones: integer = [3;92mTrue[0m
+  [1m[[0mNUM[1m][0m notificaciones_email: integer = [3;92mTrue[0m
+  [1m[[0mNUM[1m][0m notificaciones_push: integer = [3;91mFalse[0m
+  [1m[[0mOBJ[1m][0m paciente: object [1m([0m[1;36m3[0m propiedades[1m)[0m
+    [1m[[0mSTR[1m][0m carnet: string [1m([0mlongitud: [1;36m7[0m[1m)[0m = [32m"1234567"[0m
+    [1m[[0mSTR[1m][0m fecha_nacimiento: string [1m([0mlongitud: [1;36m10[0m[1m)[0m = [32m"1990-05-15"[0m
+    [1m[[0mSTR[1m][0m direccion: string [1m([0mlongitud: [1;36m15[0m[1m)[0m = [32m"Av. Brasil #123"[0m
+[1m[[0mSTR[1m][0m token: string [1m([0mlongitud: [1;36m40[0m[1m)[0m = [32m"013a94e71e2be52373cd14a1661b138adbfb6246"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"mensaje"[0m: [32m"Login exitoso"[0m,
+  [32m"usuario"[0m: [1m{[0m
+    [32m"codigo"[0m: [1;36m641[0m,
+    [32m"nombre"[0m: [32m"Ana"[0m,
+    [32m"apellido"[0m: [32m"L├│pez Fern├índez"[0m,
+    [32m"correoelectronico"[0m: [32m"ana.lopez@email.com"[0m,
+    [32m"sexo"[0m: [32m"F"[0m,
+    [32m"telefono"[0m: [32m"77777777"[0m,
+    [32m"idtipousuario"[0m: [1;36m200[0m,
+    [32m"tipo_usuario_nombre"[0m: [32m"Paciente"[0m,
+    [32m"nombre_completo"[0m: [32m"Ana L├│pez Fern├índez"[0m,
+    [32m"recibir_notificaciones"[0m: true,
+    [32m"notificaciones_email"[0m: true,
+    [32m"notificaciones_push"[0m: false,
+    [32m"paciente"[0m: [1m{[0m
+      [32m"carnet"[0m: [32m"1234567"[0m,
+      [32m"fecha_nacimiento"[0m: [32m"1990-05-15"[0m,
+      [32m"direccion"[0m: [32m"Av. Brasil #123"[0m
+    [1m}[0m
+  [1m}[0m,
+  [32m"token"[0m: [32m"013a94e71e2be52373cd14a1661b138adbfb6246"[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+Ô£ô Paciente autenticado (ID: 641)
+
+=== SECCION 2: LISTAR PRESUPUESTOS ===
+
+[1;36mÔòÉÔòÉÔòÉ Listar presupuestos ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mGET[0m [4;94mhttp://localhost:8000/api/v1/tratamientos/presupuestos/[0m
+
+[2mHeaders:[0m
+                                           
+ [36m [0m[36mAuthorization[0m[36m [0m [37m [0m[37mToken 013a94e71...b6246[0m[37m [0m 
+                                           
+
+--------------------------------------------------------------------------------
+
+
+[1;36mÔòÉÔòÉÔòÉ Respuesta - Presupuestos ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mGET[0m [4;94mhttp://localhost:8000/api/v1/tratamientos/presupuestos/[0m
+
+[2mHeaders:[0m
+                                           
+ [36m [0m[36mAuthorization[0m[36m [0m [37m [0m[37mToken 013a94e71...b6246[0m[37m [0m 
+                                           
+
+[1;32m[[0m[1;32mRESP[0m[1;32m][0m[1;32m RESPONSE[0m
+[32mÔ£à Status: [0m[1;32m200[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m4[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mNUM[1m][0m count: integer = [1;36m6[0m
+[1m[[0mNULL[1m][0m next: null
+[1m[[0mNULL[1m][0m previous: null
+[1m[[0mARR[1m][0m results: array [1m([0m[1;36m6[0m elementos[1m)[0m
+  +- Elemento [1;36m1[0m:
+    [1m[[0mNUM[1m][0m id: integer = [1;36m164[0m
+    [1m[[0mNUM[1m][0m plan_tratamiento: integer = [1;36m186[0m
+    [1m[[0mSTR[1m][0m plan_codigo: string [1m([0mlongitud: [1;36m14[0m[1m)[0m = [32m"PT-202511-0007"[0m
+    [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0006"[0m
+    [1m[[0mSTR[1m][0m subtotal: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+    [1m[[0mSTR[1m][0m descuento: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+    [1m[[0mSTR[1m][0m impuesto: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+    [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"400.00"[0m
+    [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"pendiente"[0m
+    [1m[[0mSTR[1m][0m estado_display: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"Pendiente"[0m
+    [1m[[0mNULL[1m][0m notas: null
+    [1m[[0mSTR[1m][0m fecha_creacion: string [1m([0mlongitud: [1;36m32[0m[1m)[0m = 
+[32m"2025-11-03T18:54:57.329068-04:00"[0m
+    [1m[[0mNULL[1m][0m fecha_vencimiento: null
+    [1m[[0mNULL[1m][0m fecha_aprobacion: null
+    [1m[[0mNULL[1m][0m aprobado_por: null
+    [1m[[0mNULL[1m][0m motivo_rechazo: null
+    [1m[[0mARR[1m][0m items: array [1m([0m[1;36m1[0m elementos[1m)[0m
+      +- Elemento [1;36m1[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m298[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m164[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m531[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m2[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"250.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m450.0[0m
+        [1m[[0mNUM[1m][0m numero_diente: integer = [1;36m16[0m
+    [1m[[0mSTR[1m][0m paciente_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Ana L├│pez Fern├índez"[0m
+    [1m[[0mSTR[1m][0m odontologo_nombre: string [1m([0mlongitud: [1;36m23[0m[1m)[0m = [32m"Juan Carlos P├®rez L├│pez"[0m
+  +- Elemento [1;36m2[0m:
+    [1m[[0mNUM[1m][0m id: integer = [1;36m163[0m
+    [1m[[0mNUM[1m][0m plan_tratamiento: integer = [1;36m185[0m
+    [1m[[0mSTR[1m][0m plan_codigo: string [1m([0mlongitud: [1;36m14[0m[1m)[0m = [32m"PT-202511-0006"[0m
+    [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0005"[0m
+    [1m[[0mSTR[1m][0m subtotal: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+    [1m[[0mSTR[1m][0m descuento: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+    [1m[[0mSTR[1m][0m impuesto: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+    [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"400.00"[0m
+    [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"pendiente"[0m
+    [1m[[0mSTR[1m][0m estado_display: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"Pendiente"[0m
+    [1m[[0mNULL[1m][0m notas: null
+    [1m[[0mSTR[1m][0m fecha_creacion: string [1m([0mlongitud: [1;36m32[0m[1m)[0m = 
+[32m"2025-11-03T18:08:27.928619-04:00"[0m
+    [1m[[0mNULL[1m][0m fecha_vencimiento: null
+    [1m[[0mNULL[1m][0m fecha_aprobacion: null
+    [1m[[0mNULL[1m][0m aprobado_por: null
+    [1m[[0mNULL[1m][0m motivo_rechazo: null
+    [1m[[0mARR[1m][0m items: array [1m([0m[1;36m1[0m elementos[1m)[0m
+      +- Elemento [1;36m1[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m297[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m163[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m531[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m2[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"250.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m450.0[0m
+        [1m[[0mNUM[1m][0m numero_diente: integer = [1;36m16[0m
+    [1m[[0mSTR[1m][0m paciente_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Ana L├│pez Fern├índez"[0m
+    [1m[[0mSTR[1m][0m odontologo_nombre: string [1m([0mlongitud: [1;36m23[0m[1m)[0m = [32m"Juan Carlos P├®rez L├│pez"[0m
+  +- Elemento [1;36m3[0m:
+    [1m[[0mNUM[1m][0m id: integer = [1;36m162[0m
+    [1m[[0mNUM[1m][0m plan_tratamiento: integer = [1;36m184[0m
+    [1m[[0mSTR[1m][0m plan_codigo: string [1m([0mlongitud: [1;36m14[0m[1m)[0m = [32m"PT-202511-0005"[0m
+    [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0004"[0m
+    [1m[[0mSTR[1m][0m subtotal: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+    [1m[[0mSTR[1m][0m descuento: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+    [1m[[0mSTR[1m][0m impuesto: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+    [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"400.00"[0m
+    [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"pendiente"[0m
+    [1m[[0mSTR[1m][0m estado_display: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"Pendiente"[0m
+    [1m[[0mNULL[1m][0m notas: null
+    [1m[[0mSTR[1m][0m fecha_creacion: string [1m([0mlongitud: [1;36m32[0m[1m)[0m = 
+[32m"2025-11-03T18:08:00.990522-04:00"[0m
+    [1m[[0mNULL[1m][0m fecha_vencimiento: null
+    [1m[[0mNULL[1m][0m fecha_aprobacion: null
+    [1m[[0mNULL[1m][0m aprobado_por: null
+    [1m[[0mNULL[1m][0m motivo_rechazo: null
+    [1m[[0mARR[1m][0m items: array [1m([0m[1;36m1[0m elementos[1m)[0m
+      +- Elemento [1;36m1[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m296[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m162[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m531[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m2[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"250.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m450.0[0m
+        [1m[[0mNUM[1m][0m numero_diente: integer = [1;36m16[0m
+    [1m[[0mSTR[1m][0m paciente_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Ana L├│pez Fern├índez"[0m
+    [1m[[0mSTR[1m][0m odontologo_nombre: string [1m([0mlongitud: [1;36m23[0m[1m)[0m = [32m"Juan Carlos P├®rez L├│pez"[0m
+  +- Elemento [1;36m4[0m:
+    [1m[[0mNUM[1m][0m id: integer = [1;36m161[0m
+    [1m[[0mNUM[1m][0m plan_tratamiento: integer = [1;36m183[0m
+    [1m[[0mSTR[1m][0m plan_codigo: string [1m([0mlongitud: [1;36m14[0m[1m)[0m = [32m"PT-202511-0004"[0m
+    [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0003"[0m
+    [1m[[0mSTR[1m][0m subtotal: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+    [1m[[0mSTR[1m][0m descuento: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+    [1m[[0mSTR[1m][0m impuesto: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+    [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"400.00"[0m
+    [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"pendiente"[0m
+    [1m[[0mSTR[1m][0m estado_display: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"Pendiente"[0m
+    [1m[[0mNULL[1m][0m notas: null
+    [1m[[0mSTR[1m][0m fecha_creacion: string [1m([0mlongitud: [1;36m32[0m[1m)[0m = 
+[32m"2025-11-03T18:06:21.860469-04:00"[0m
+    [1m[[0mNULL[1m][0m fecha_vencimiento: null
+    [1m[[0mNULL[1m][0m fecha_aprobacion: null
+    [1m[[0mNULL[1m][0m aprobado_por: null
+    [1m[[0mNULL[1m][0m motivo_rechazo: null
+    [1m[[0mARR[1m][0m items: array [1m([0m[1;36m1[0m elementos[1m)[0m
+      +- Elemento [1;36m1[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m295[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m161[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m531[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m2[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"250.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"450.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m450.0[0m
+        [1m[[0mNUM[1m][0m numero_diente: integer = [1;36m16[0m
+    [1m[[0mSTR[1m][0m paciente_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Ana L├│pez Fern├índez"[0m
+    [1m[[0mSTR[1m][0m odontologo_nombre: string [1m([0mlongitud: [1;36m23[0m[1m)[0m = [32m"Juan Carlos P├®rez L├│pez"[0m
+  +- Elemento [1;36m5[0m:
+    [1m[[0mNUM[1m][0m id: integer = [1;36m160[0m
+    [1m[[0mNUM[1m][0m plan_tratamiento: integer = [1;36m181[0m
+    [1m[[0mSTR[1m][0m plan_codigo: string [1m([0mlongitud: [1;36m14[0m[1m)[0m = [32m"PT-202511-0002"[0m
+    [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0002"[0m
+    [1m[[0mSTR[1m][0m subtotal: string [1m([0mlongitud: [1;36m7[0m[1m)[0m = [32m"6000.00"[0m
+    [1m[[0mSTR[1m][0m descuento: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"500.00"[0m
+    [1m[[0mSTR[1m][0m impuesto: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+    [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m7[0m[1m)[0m = [32m"5500.00"[0m
+    [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"aprobado"[0m
+    [1m[[0mSTR[1m][0m estado_display: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"Aprobado"[0m
+    [1m[[0mNULL[1m][0m notas: null
+    [1m[[0mSTR[1m][0m fecha_creacion: string [1m([0mlongitud: [1;36m32[0m[1m)[0m = 
+[32m"2025-11-03T15:58:49.252355-04:00"[0m
+    [1m[[0mNULL[1m][0m fecha_vencimiento: null
+    [1m[[0mNULL[1m][0m fecha_aprobacion: null
+    [1m[[0mNULL[1m][0m aprobado_por: null
+    [1m[[0mNULL[1m][0m motivo_rechazo: null
+    [1m[[0mARR[1m][0m items: array [1m([0m[1;36m1[0m elementos[1m)[0m
+      +- Elemento [1;36m1[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m294[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m160[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m535[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"Ortodoncia [0m[32m([0m[32mMes[0m[32m)[0m[32m"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m12[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"500.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"500.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m7[0m[1m)[0m = [32m"5500.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m5500.0[0m
+        [1m[[0mNULL[1m][0m numero_diente: null
+    [1m[[0mSTR[1m][0m paciente_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Elena Vargas Castro"[0m
+    [1m[[0mSTR[1m][0m odontologo_nombre: string [1m([0mlongitud: [1;36m23[0m[1m)[0m = [32m"Juan Carlos P├®rez L├│pez"[0m
+  +- Elemento [1;36m6[0m:
+    [1m[[0mNUM[1m][0m id: integer = [1;36m159[0m
+    [1m[[0mNUM[1m][0m plan_tratamiento: integer = [1;36m180[0m
+    [1m[[0mSTR[1m][0m plan_codigo: string [1m([0mlongitud: [1;36m14[0m[1m)[0m = [32m"PT-202511-0001"[0m
+    [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0001"[0m
+    [1m[[0mSTR[1m][0m subtotal: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"600.00"[0m
+    [1m[[0mSTR[1m][0m descuento: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+    [1m[[0mSTR[1m][0m impuesto: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+    [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"550.00"[0m
+    [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"aprobado"[0m
+    [1m[[0mSTR[1m][0m estado_display: string [1m([0mlongitud: [1;36m8[0m[1m)[0m = [32m"Aprobado"[0m
+    [1m[[0mNULL[1m][0m notas: null
+    [1m[[0mSTR[1m][0m fecha_creacion: string [1m([0mlongitud: [1;36m32[0m[1m)[0m = 
+[32m"2025-11-03T15:58:49.245903-04:00"[0m
+    [1m[[0mSTR[1m][0m fecha_vencimiento: string [1m([0mlongitud: [1;36m10[0m[1m)[0m = [32m"2025-12-03"[0m
+    [1m[[0mNULL[1m][0m fecha_aprobacion: null
+    [1m[[0mNULL[1m][0m aprobado_por: null
+    [1m[[0mNULL[1m][0m motivo_rechazo: null
+    [1m[[0mARR[1m][0m items: array [1m([0m[1;36m2[0m elementos[1m)[0m
+      +- Elemento [1;36m1[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m292[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m159[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m530[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Extracci├│n Compleja"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m1[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"400.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m4[0m[1m)[0m = [32m"0.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"400.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m400.0[0m
+        [1m[[0mNUM[1m][0m numero_diente: integer = [1;36m36[0m
+      +- Elemento [1;36m2[0m:
+        [1m[[0mNUM[1m][0m id: integer = [1;36m293[0m
+        [1m[[0mNUM[1m][0m presupuesto: integer = [1;36m159[0m
+        [1m[[0mNUM[1m][0m servicio: integer = [1;36m531[0m
+        [1m[[0mSTR[1m][0m servicio_nombre: string [1m([0mlongitud: [1;36m19[0m[1m)[0m = [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m
+        [1m[[0mNULL[1m][0m descripcion: null
+        [1m[[0mNUM[1m][0m cantidad: integer = [1;36m1[0m
+        [1m[[0mSTR[1m][0m precio_unitario: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"250.00"[0m
+        [1m[[0mSTR[1m][0m descuento_item: string [1m([0mlongitud: [1;36m5[0m[1m)[0m = [32m"50.00"[0m
+        [1m[[0mSTR[1m][0m total: string [1m([0mlongitud: [1;36m6[0m[1m)[0m = [32m"200.00"[0m
+        [1m[[0mNUM[1m][0m total_calculado: float = [1;36m200.0[0m
+        [1m[[0mNUM[1m][0m numero_diente: integer = [1;36m37[0m
+    [1m[[0mSTR[1m][0m paciente_nombre: string [1m([0mlongitud: [1;36m22[0m[1m)[0m = [32m"Beatriz S├ínchez Quispe"[0m
+    [1m[[0mSTR[1m][0m odontologo_nombre: string [1m([0mlongitud: [1;36m22[0m[1m)[0m = [32m"Roberto Mart├¡nez Silva"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"count"[0m: [1;36m6[0m,
+  [32m"next"[0m: null,
+  [32m"previous"[0m: null,
+  [32m"results"[0m: [1m[[0m
+    [1m{[0m
+      [32m"id"[0m: [1;36m164[0m,
+      [32m"plan_tratamiento"[0m: [1;36m186[0m,
+      [32m"plan_codigo"[0m: [32m"PT-202511-0007"[0m,
+      [32m"codigo"[0m: [32m"PRES-202511-0006"[0m,
+      [32m"subtotal"[0m: [32m"450.00"[0m,
+      [32m"descuento"[0m: [32m"50.00"[0m,
+      [32m"impuesto"[0m: [32m"0.00"[0m,
+      [32m"total"[0m: [32m"400.00"[0m,
+      [32m"estado"[0m: [32m"pendiente"[0m,
+      [32m"estado_display"[0m: [32m"Pendiente"[0m,
+      [32m"notas"[0m: null,
+      [32m"fecha_creacion"[0m: [32m"2025-11-03T18:54:57.329068-04:00"[0m,
+      [32m"fecha_vencimiento"[0m: null,
+      [32m"fecha_aprobacion"[0m: null,
+      [32m"aprobado_por"[0m: null,
+      [32m"motivo_rechazo"[0m: null,
+      [32m"items"[0m: [1m[[0m
+        [1m{[0m
+          [32m"id"[0m: [1;36m298[0m,
+          [32m"presupuesto"[0m: [1;36m164[0m,
+          [32m"servicio"[0m: [1;36m531[0m,
+          [32m"servicio_nombre"[0m: [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m2[0m,
+          [32m"precio_unitario"[0m: [32m"250.00"[0m,
+          [32m"descuento_item"[0m: [32m"50.00"[0m,
+          [32m"total"[0m: [32m"450.00"[0m,
+          [32m"total_calculado"[0m: [1;36m450.0[0m,
+          [32m"numero_diente"[0m: [1;36m16[0m
+        [1m}[0m
+      [1m][0m,
+      [32m"paciente_nombre"[0m: [32m"Ana L├│pez Fern├índez"[0m,
+      [32m"odontologo_nombre"[0m: [32m"Juan Carlos P├®rez L├│pez"[0m
+    [1m}[0m,
+    [1m{[0m
+      [32m"id"[0m: [1;36m163[0m,
+      [32m"plan_tratamiento"[0m: [1;36m185[0m,
+      [32m"plan_codigo"[0m: [32m"PT-202511-0006"[0m,
+      [32m"codigo"[0m: [32m"PRES-202511-0005"[0m,
+      [32m"subtotal"[0m: [32m"450.00"[0m,
+      [32m"descuento"[0m: [32m"50.00"[0m,
+      [32m"impuesto"[0m: [32m"0.00"[0m,
+      [32m"total"[0m: [32m"400.00"[0m,
+      [32m"estado"[0m: [32m"pendiente"[0m,
+      [32m"estado_display"[0m: [32m"Pendiente"[0m,
+      [32m"notas"[0m: null,
+      [32m"fecha_creacion"[0m: [32m"2025-11-03T18:08:27.928619-04:00"[0m,
+      [32m"fecha_vencimiento"[0m: null,
+      [32m"fecha_aprobacion"[0m: null,
+      [32m"aprobado_por"[0m: null,
+      [32m"motivo_rechazo"[0m: null,
+      [32m"items"[0m: [1m[[0m
+        [1m{[0m
+          [32m"id"[0m: [1;36m297[0m,
+          [32m"presupuesto"[0m: [1;36m163[0m,
+          [32m"servicio"[0m: [1;36m531[0m,
+          [32m"servicio_nombre"[0m: [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m2[0m,
+          [32m"precio_unitario"[0m: [32m"250.00"[0m,
+          [32m"descuento_item"[0m: [32m"50.00"[0m,
+          [32m"total"[0m: [32m"450.00"[0m,
+          [32m"total_calculado"[0m: [1;36m450.0[0m,
+          [32m"numero_diente"[0m: [1;36m16[0m
+        [1m}[0m
+      [1m][0m,
+      [32m"paciente_nombre"[0m: [32m"Ana L├│pez Fern├índez"[0m,
+      [32m"odontologo_nombre"[0m: [32m"Juan Carlos P├®rez L├│pez"[0m
+    [1m}[0m,
+    [1m{[0m
+      [32m"id"[0m: [1;36m162[0m,
+      [32m"plan_tratamiento"[0m: [1;36m184[0m,
+      [32m"plan_codigo"[0m: [32m"PT-202511-0005"[0m,
+      [32m"codigo"[0m: [32m"PRES-202511-0004"[0m,
+      [32m"subtotal"[0m: [32m"450.00"[0m,
+      [32m"descuento"[0m: [32m"50.00"[0m,
+      [32m"impuesto"[0m: [32m"0.00"[0m,
+      [32m"total"[0m: [32m"400.00"[0m,
+      [32m"estado"[0m: [32m"pendiente"[0m,
+      [32m"estado_display"[0m: [32m"Pendiente"[0m,
+      [32m"notas"[0m: null,
+      [32m"fecha_creacion"[0m: [32m"2025-11-03T18:08:00.990522-04:00"[0m,
+      [32m"fecha_vencimiento"[0m: null,
+      [32m"fecha_aprobacion"[0m: null,
+      [32m"aprobado_por"[0m: null,
+      [32m"motivo_rechazo"[0m: null,
+      [32m"items"[0m: [1m[[0m
+        [1m{[0m
+          [32m"id"[0m: [1;36m296[0m,
+          [32m"presupuesto"[0m: [1;36m162[0m,
+          [32m"servicio"[0m: [1;36m531[0m,
+          [32m"servicio_nombre"[0m: [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m2[0m,
+          [32m"precio_unitario"[0m: [32m"250.00"[0m,
+          [32m"descuento_item"[0m: [32m"50.00"[0m,
+          [32m"total"[0m: [32m"450.00"[0m,
+          [32m"total_calculado"[0m: [1;36m450.0[0m,
+          [32m"numero_diente"[0m: [1;36m16[0m
+        [1m}[0m
+      [1m][0m,
+      [32m"paciente_nombre"[0m: [32m"Ana L├│pez Fern├índez"[0m,
+      [32m"odontologo_nombre"[0m: [32m"Juan Carlos P├®rez L├│pez"[0m
+    [1m}[0m,
+    [1m{[0m
+      [32m"id"[0m: [1;36m161[0m,
+      [32m"plan_tratamiento"[0m: [1;36m183[0m,
+      [32m"plan_codigo"[0m: [32m"PT-202511-0004"[0m,
+      [32m"codigo"[0m: [32m"PRES-202511-0003"[0m,
+      [32m"subtotal"[0m: [32m"450.00"[0m,
+      [32m"descuento"[0m: [32m"50.00"[0m,
+      [32m"impuesto"[0m: [32m"0.00"[0m,
+      [32m"total"[0m: [32m"400.00"[0m,
+      [32m"estado"[0m: [32m"pendiente"[0m,
+      [32m"estado_display"[0m: [32m"Pendiente"[0m,
+      [32m"notas"[0m: null,
+      [32m"fecha_creacion"[0m: [32m"2025-11-03T18:06:21.860469-04:00"[0m,
+      [32m"fecha_vencimiento"[0m: null,
+      [32m"fecha_aprobacion"[0m: null,
+      [32m"aprobado_por"[0m: null,
+      [32m"motivo_rechazo"[0m: null,
+      [32m"items"[0m: [1m[[0m
+        [1m{[0m
+          [32m"id"[0m: [1;36m295[0m,
+          [32m"presupuesto"[0m: [1;36m161[0m,
+          [32m"servicio"[0m: [1;36m531[0m,
+          [32m"servicio_nombre"[0m: [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m2[0m,
+          [32m"precio_unitario"[0m: [32m"250.00"[0m,
+          [32m"descuento_item"[0m: [32m"50.00"[0m,
+          [32m"total"[0m: [32m"450.00"[0m,
+          [32m"total_calculado"[0m: [1;36m450.0[0m,
+          [32m"numero_diente"[0m: [1;36m16[0m
+        [1m}[0m
+      [1m][0m,
+      [32m"paciente_nombre"[0m: [32m"Ana L├│pez Fern├índez"[0m,
+      [32m"odontologo_nombre"[0m: [32m"Juan Carlos P├®rez L├│pez"[0m
+    [1m}[0m,
+    [1m{[0m
+      [32m"id"[0m: [1;36m160[0m,
+      [32m"plan_tratamiento"[0m: [1;36m181[0m,
+      [32m"plan_codigo"[0m: [32m"PT-202511-0002"[0m,
+      [32m"codigo"[0m: [32m"PRES-202511-0002"[0m,
+      [32m"subtotal"[0m: [32m"6000.00"[0m,
+      [32m"descuento"[0m: [32m"500.00"[0m,
+      [32m"impuesto"[0m: [32m"0.00"[0m,
+      [32m"total"[0m: [32m"5500.00"[0m,
+      [32m"estado"[0m: [32m"aprobado"[0m,
+      [32m"estado_display"[0m: [32m"Aprobado"[0m,
+      [32m"notas"[0m: null,
+      [32m"fecha_creacion"[0m: [32m"2025-11-03T15:58:49.252355-04:00"[0m,
+      [32m"fecha_vencimiento"[0m: null,
+      [32m"fecha_aprobacion"[0m: null,
+      [32m"aprobado_por"[0m: null,
+      [32m"motivo_rechazo"[0m: null,
+      [32m"items"[0m: [1m[[0m
+        [1m{[0m
+          [32m"id"[0m: [1;36m294[0m,
+          [32m"presupuesto"[0m: [1;36m160[0m,
+          [32m"servicio"[0m: [1;36m535[0m,
+          [32m"servicio_nombre"[0m: [32m"Ortodoncia [0m[32m([0m[32mMes[0m[32m)[0m[32m"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m12[0m,
+          [32m"precio_unitario"[0m: [32m"500.00"[0m,
+          [32m"descuento_item"[0m: [32m"500.00"[0m,
+          [32m"total"[0m: [32m"5500.00"[0m,
+          [32m"total_calculado"[0m: [1;36m5500.0[0m,
+          [32m"numero_diente"[0m: null
+        [1m}[0m
+      [1m][0m,
+      [32m"paciente_nombre"[0m: [32m"Elena Vargas Castro"[0m,
+      [32m"odontologo_nombre"[0m: [32m"Juan Carlos P├®rez L├│pez"[0m
+    [1m}[0m,
+    [1m{[0m
+      [32m"id"[0m: [1;36m159[0m,
+      [32m"plan_tratamiento"[0m: [1;36m180[0m,
+      [32m"plan_codigo"[0m: [32m"PT-202511-0001"[0m,
+      [32m"codigo"[0m: [32m"PRES-202511-0001"[0m,
+      [32m"subtotal"[0m: [32m"600.00"[0m,
+      [32m"descuento"[0m: [32m"50.00"[0m,
+      [32m"impuesto"[0m: [32m"0.00"[0m,
+      [32m"total"[0m: [32m"550.00"[0m,
+      [32m"estado"[0m: [32m"aprobado"[0m,
+      [32m"estado_display"[0m: [32m"Aprobado"[0m,
+      [32m"notas"[0m: null,
+      [32m"fecha_creacion"[0m: [32m"2025-11-03T15:58:49.245903-04:00"[0m,
+      [32m"fecha_vencimiento"[0m: [32m"2025-12-03"[0m,
+      [32m"fecha_aprobacion"[0m: null,
+      [32m"aprobado_por"[0m: null,
+      [32m"motivo_rechazo"[0m: null,
+      [32m"items"[0m: [1m[[0m
+        [1m{[0m
+          [32m"id"[0m: [1;36m292[0m,
+          [32m"presupuesto"[0m: [1;36m159[0m,
+          [32m"servicio"[0m: [1;36m530[0m,
+          [32m"servicio_nombre"[0m: [32m"Extracci├│n Compleja"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m1[0m,
+          [32m"precio_unitario"[0m: [32m"400.00"[0m,
+          [32m"descuento_item"[0m: [32m"0.00"[0m,
+          [32m"total"[0m: [32m"400.00"[0m,
+          [32m"total_calculado"[0m: [1;36m400.0[0m,
+          [32m"numero_diente"[0m: [1;36m36[0m
+        [1m}[0m,
+        [1m{[0m
+          [32m"id"[0m: [1;36m293[0m,
+          [32m"presupuesto"[0m: [1;36m159[0m,
+          [32m"servicio"[0m: [1;36m531[0m,
+          [32m"servicio_nombre"[0m: [32m"Obturaci├│n [0m[32m([0m[32mResina[0m[32m)[0m[32m"[0m,
+          [32m"descripcion"[0m: null,
+          [32m"cantidad"[0m: [1;36m1[0m,
+          [32m"precio_unitario"[0m: [32m"250.00"[0m,
+          [32m"descuento_item"[0m: [32m"50.00"[0m,
+          [32m"total"[0m: [32m"200.00"[0m,
+          [32m"total_calculado"[0m: [1;36m200.0[0m,
+          [32m"numero_diente"[0m: [1;36m37[0m
+        [1m}[0m
+      [1m][0m,
+      [32m"paciente_nombre"[0m: [32m"Beatriz S├ínchez Quispe"[0m,
+      [32m"odontologo_nombre"[0m: [32m"Roberto Mart├¡nez Silva"[0m
+    [1m}[0m
+  [1m][0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+Ô£ô Se encontraron 6 presupuestos
+  Presupuesto seleccionado: ID 164, Total: Bs. 400.00
+
+=== SECCION 3: CREAR PAYMENT INTENT PARA PRESUPUESTO ===
+
+[1;36mÔòÉÔòÉÔòÉ Crear Payment Intent para presupuesto ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/pagos/stripe/crear-intencion-presupuesto/[0m
+
+[2mHeaders:[0m
+                                           
+ [36m [0m[36mAuthorization[0m[36m [0m [37m [0m[37mToken 013a94e71...b6246[0m[37m [0m 
+                                           
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mNUM[1m][0m presupuesto_id: integer = [1;36m164[0m
+[1m[[0mNUM[1m][0m monto: float = [1;36m400.0[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"presupuesto_id"[0m: [1;36m164[0m,
+  [32m"monto"[0m: [1;36m400.0[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+
+[1;36mÔòÉÔòÉÔòÉ Respuesta - Payment Intent creado ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/pagos/stripe/crear-intencion-presupuesto/[0m
+
+[2mHeaders:[0m
+                                           
+ [36m [0m[36mAuthorization[0m[36m [0m [37m [0m[37mToken 013a94e71...b6246[0m[37m [0m 
+                                           
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mNUM[1m][0m presupuesto_id: integer = [1;36m164[0m
+[1m[[0mNUM[1m][0m monto: float = [1;36m400.0[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"presupuesto_id"[0m: [1;36m164[0m,
+  [32m"monto"[0m: [1;36m400.0[0m
+[1m}[0m
+
+[1;32m[[0m[1;32mRESP[0m[1;32m][0m[1;32m RESPONSE[0m
+[32mÔ£à Status: [0m[1;32m201[0m
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m6[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mSTR[1m][0m client_secret: string [1m([0mlongitud: [1;36m60[0m[1m)[0m = 
+[32m"pi_3SPYF6RxIhITCnEh0hyJxB7e_secret_2cIT0kvKBVjasEX..."[0m
+[1m[[0mNUM[1m][0m pago_id: integer = [1;36m18[0m
+[1m[[0mSTR[1m][0m codigo_pago: string [1m([0mlongitud: [1;36m13[0m[1m)[0m = [32m"PRES-C0F0DF61"[0m
+[1m[[0mNUM[1m][0m monto: float = [1;36m400.0[0m
+[1m[[0mSTR[1m][0m moneda: string [1m([0mlongitud: [1;36m3[0m[1m)[0m = [32m"BOB"[0m
+[1m[[0mOBJ[1m][0m presupuesto: object [1m([0m[1;36m4[0m propiedades[1m)[0m
+  [1m[[0mNUM[1m][0m id: integer = [1;36m164[0m
+  [1m[[0mSTR[1m][0m codigo: string [1m([0mlongitud: [1;36m16[0m[1m)[0m = [32m"PRES-202511-0006"[0m
+  [1m[[0mNUM[1m][0m total: float = [1;36m400.0[0m
+  [1m[[0mSTR[1m][0m estado: string [1m([0mlongitud: [1;36m9[0m[1m)[0m = [32m"pendiente"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"client_secret"[0m: 
+[32m"pi_3SPYF6RxIhITCnEh0hyJxB7e_secret_2cIT0kvKBVjasEXvgSz4Z1cHz"[0m,
+  [32m"pago_id"[0m: [1;36m18[0m,
+  [32m"codigo_pago"[0m: [32m"PRES-C0F0DF61"[0m,
+  [32m"monto"[0m: [1;36m400.0[0m,
+  [32m"moneda"[0m: [32m"BOB"[0m,
+  [32m"presupuesto"[0m: [1m{[0m
+    [32m"id"[0m: [1;36m164[0m,
+    [32m"codigo"[0m: [32m"PRES-202511-0006"[0m,
+    [32m"total"[0m: [1;36m400.0[0m,
+    [32m"estado"[0m: [32m"pendiente"[0m
+  [1m}[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+python.exe : DEBUG 2025-11-03 20:36:58,875 utils 16876 19796 (0.003) SELECT 
+"pago_en_linea"."id", "pago_en_linea"."codigo_pago", "pago_en_linea"."origen_tipo", 
+"pago_en_linea"."consulta_id", "pago_en_linea"."monto", "pago_en_linea"."moneda", 
+"pago_en_linea"."monto_original", "pago_en_linea"."saldo_anterior", 
+"pago_en_linea"."saldo_nuevo", "pago_en_linea"."estado", "pago_en_linea"."metodo_pago", 
+"pago_en_linea"."stripe_payment_intent_id", "pago_en_linea"."stripe_charge_id", 
+"pago_en_linea"."stripe_customer_id", "pago_en_linea"."stripe_metadata", 
+"pago_en_linea"."descripcion", "pago_en_linea"."motivo_rechazo", 
+"pago_en_linea"."numero_intentos", "pago_en_linea"."ultimo_intento", 
+"pago_en_linea"."fecha_creacion", "pago_en_linea"."fecha_actualizacion" FROM 
+"pago_en_linea" WHERE "pago_en_linea"."id" = 18 LIMIT 21; args=(18,); alias=default
+En línea: 1 Carácter: 136
++ ... G="utf-8" ; & "C:\Users\asus\AppData\Local\Programs\Python\Python313\ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (DEBUG 2025-11-0...; alias=default:String) [] 
+   , RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DEBUG 2025-11-03 20:36:58,877 utils 16876 19796 (0.002) UPDATE "pago_en_linea" SET 
+"codigo_pago" = 'PRES-C0F0DF61', "origen_tipo" = 'plan_completo', "consulta_id" = NULL, 
+"monto" = 400.00, "moneda" = 'BOB', "monto_original" = 400.00, "saldo_anterior" = 0.00, 
+"saldo_nuevo" = 0.00, "estado" = 'aprobado', "metodo_pago" = 'tarjeta', 
+"stripe_payment_intent_id" = 'pi_3SPYF6RxIhITCnEh0hyJxB7e', "stripe_charge_id" = NULL, 
+"stripe_customer_id" = NULL, "stripe_metadata" = '{"presupuesto_id": 164, 
+"total_presupuesto": "400.00", "presupuesto_codigo": "PRES-202511-0006"}'::jsonb, 
+"descripcion" = 'Pago presupuesto: PRES-202511-0006 - Total: Bs. 400.00', 
+"motivo_rechazo" = NULL, "numero_intentos" = 0, "ultimo_intento" = NULL, "fecha_creacion" 
+= '2025-11-04T00:36:58.809295+00:00'::timestamptz, "fecha_actualizacion" = 
+'2025-11-04T00:36:58.875886+00:00'::timestamptz WHERE "pago_en_linea"."id" = 18; 
+args=('PRES-C0F0DF61', 'plan_completo', Decimal('400.00'), 'BOB', Decimal('400.00'), 
+Decimal('0.00'), Decimal('0.00'), 'aprobado', 'tarjeta', 'pi_3SPYF6RxIhITCnEh0hyJxB7e', 
+<django.db.backends.postgresql.psycopg_any.Jsonb object at 0x000002BA5CF31D30>, 'Pago 
+presupuesto: PRES-202511-0006 - Total: Bs. 400.00', 0, datetime.datetime(2025, 11, 4, 0, 
+36, 58, 809295, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 11, 4, 0, 36, 58, 
+875886, tzinfo=datetime.timezone.utc), 18); alias=default
+Ô£ô Payment Intent creado exitosamente
+  Codigo Pago: PRES-C0F0DF61
+  Pago ID (DB): 18
+  Client Secret: pi_3SPYF6RxIhITCnEh0hyJxB7e_se...
+
+=== SECCION 4: SIMULAR CONFIRMACION DE PAGO ===
+NOTA: En produccion, el frontend procesaria el pago con Stripe.js
+Para pruebas E2E, marcaremos el pago como aprobado manualmente en la BD
+Ô£ô Pago marcado como aprobado (ID: 18)
+
+=== SECCION 5: CONFIRMAR PAGO Y APROBAR PRESUPUESTO ===
+
+[1;36mÔòÉÔòÉÔòÉ Confirmar pago de presupuesto ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/pagos/stripe/confirmar-pago-presupuesto/[0m
+
+[2mHeaders:[0m
+                                           
+ [36m [0m[36mAuthorization[0m[36m [0m [37m [0m[37mToken 013a94e71...b6246[0m[37m [0m 
+                                           
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mNUM[1m][0m pago_id: integer = [1;36m18[0m
+[1m[[0mSTR[1m][0m payment_intent_id: string [1m([0mlongitud: [1;36m27[0m[1m)[0m = [32m"pi_3SPYF6RxIhITCnEh0hyJxB7e"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"pago_id"[0m: [1;36m18[0m,
+  [32m"payment_intent_id"[0m: [32m"pi_3SPYF6RxIhITCnEh0hyJxB7e"[0m
+[1m}[0m
+
+--------------------------------------------------------------------------------
+
+
+[1;36mÔòÉÔòÉÔòÉ Respuesta - Pago confirmado ÔòÉÔòÉÔòÉ[0m
+
+[1;33m[[0m[1;33mREQ[0m[1;33m][0m[1;33m REQUEST[0m
+[1mPOST[0m [4;94mhttp://localhost:8000/api/v1/pagos/stripe/confirmar-pago-presupuesto/[0m
+
+[2mHeaders:[0m
+                                           
+ [36m [0m[36mAuthorization[0m[36m [0m [37m [0m[37mToken 013a94e71...b6246[0m[37m [0m 
+                                           
+
+[2mBody Type:[0m [32mobject [0m[1;32m([0m[1;32m2[0m[32m propiedades[0m[1;32m)[0m
+
+[2mEstructura de datos:[0m
+[1m[[0mNUM[1m][0m pago_id: integer = [1;36m18[0m
+[1m[[0mSTR[1m][0m payment_intent_id: string [1m([0mlongitud: [1;36m27[0m[1m)[0m = [32m"pi_3SPYF6RxIhITCnEh0hyJxB7e"[0m
+
+[2mJSON:[0m
+[1m{[0m
+  [32m"pago_id"[0m: [1;36m18[0m,
+  [32m"payment_intent_id"[0m: [32m"pi_3SPYF6RxIhITCnEh0hyJxB7e"[0m
+[1m}[0m
+
+[1;32m[[0m[1;32mRESP[0m[1;32m][0m[1;32m RESPONSE[0m
+[31mÔØî Status: [0m[1;31m400[0m
+
+[2mBody Type:[0m [32mstring [0m[1;32m([0m[32mlongitud: [0m[1;32m48[0m[1;32m)[0m
+
+--------------------------------------------------------------------------------
+
+Ô£ù Error al confirmar pago
+
+Ô£ô Reporte JSON generado: salida_flujo10.json

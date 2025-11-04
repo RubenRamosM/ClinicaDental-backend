@@ -1,0 +1,91 @@
+###############################################################################
+# 🤖 PRUEBA RÁPIDA - CHATBOT DE CITAS
+###############################################################################
+#
+# ✅ INSTRUCCIONES:
+#   1. Hacer click en "Send Request" sobre CADA línea ###
+#   2. Esperar la respuesta
+#   3. Continuar con el siguiente
+#   4. NO seleccionar todo
+#
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+@sessionId = test-{{$timestamp}}
+
+### 1. Saludo
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Hola",
+  "correo_electronico": "paciente1@test.com",
+  "nombre": "Juan Pérez"
+}
+
+### 2. Ver citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Ver mis citas"
+}
+
+### 3. Iniciar reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Quiero reservar una cita"
+}
+
+### 4. Fecha: mañana
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "mañana"
+}
+
+### 5. Horario: opción 1
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "1"
+}
+
+### 6. Tipo: opción 1
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "1"
+}
+
+### 7. Confirmar: sí
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "sí"
+}
+
+### 8. Ver historial
+GET {{baseUrl}}/chatbot/historial/?session_id={{sessionId}}
+
+### 9. Despedida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{sessionId}}",
+  "mensaje": "Gracias, adiós"
+}

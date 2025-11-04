@@ -1,0 +1,123 @@
+{
+  "flujo": {
+    "numero": 2,
+    "nombre": "Gestion de Citas",
+    "descripcion": "Resultados de la ejecucion del flujo 02"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T18:47:20.971032",
+    "fin": "2025-11-03T18:47:58.956045",
+    "duracion_segundos": 37.99,
+    "fecha_legible": "03/11/2025 18:47:20"
+  },
+  "estadisticas": {
+    "total_secciones": 7,
+    "secciones_exitosas": 7,
+    "secciones_fallidas": 0,
+    "tasa_exito_porcentaje": 100.0,
+    "total_errores": 0,
+    "total_datos_creados": 1
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Autenticacion",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:28.758934",
+      "detalles": {
+        "roles_autenticados": [
+          "Paciente",
+          "Odontologo",
+          "Admin"
+        ],
+        "paciente_id": 641,
+        "odontologo_id": 637
+      }
+    },
+    {
+      "numero": 2,
+      "nombre": "Listar citas existentes",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:35.352058",
+      "detalles": {
+        "consultas_realizadas": 3
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Crear nueva cita",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:39.576317",
+      "detalles": {
+        "cita_id": 448,
+        "fecha": "2025-11-04",
+        "paciente_id": 641,
+        "odontologo_id": 637
+      }
+    },
+    {
+      "numero": 4,
+      "nombre": "Ver detalle de cita",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:43.833556",
+      "detalles": {
+        "cita_id": 448,
+        "consultas_realizadas": 2
+      }
+    },
+    {
+      "numero": 5,
+      "nombre": "Actualizar cita",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:48.089955",
+      "detalles": {
+        "cita_id": 448,
+        "campos_actualizados": [
+          "motivo_consulta",
+          "hora"
+        ]
+      }
+    },
+    {
+      "numero": 6,
+      "nombre": "Cancelar cita",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:52.362950",
+      "detalles": {
+        "cita_id": 448,
+        "motivo": "Paciente cancelo por motivos personales"
+      }
+    },
+    {
+      "numero": 7,
+      "nombre": "Filtrar citas",
+      "exito": true,
+      "timestamp": "2025-11-03T18:47:58.951208",
+      "detalles": {
+        "filtros_aplicados": 3,
+        "tipos": [
+          "por_estado",
+          "por_odontologo",
+          "por_paciente"
+        ]
+      }
+    }
+  ],
+  "datos_creados": {
+    "cita": [
+      {
+        "id": 448,
+        "datos": {
+          "fecha": "2025-11-04",
+          "motivo": "Limpieza dental y revision general"
+        },
+        "timestamp": "2025-11-03T18:47:39.576327"
+      }
+    ]
+  },
+  "errores": [],
+  "resumen": {
+    "estado": "EXITOSO",
+    "mensaje": "Todas las 7 secciones ejecutadas exitosamente"
+  }
+}

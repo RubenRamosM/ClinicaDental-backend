@@ -1,0 +1,102 @@
+{
+  "flujo": {
+    "numero": 5,
+    "nombre": "Facturacion y Pagos",
+    "descripcion": "Resultados de la ejecucion del flujo 05"
+  },
+  "ejecucion": {
+    "inicio": "2025-11-03T19:03:04.018596",
+    "fin": "2025-11-03T19:03:28.189213",
+    "duracion_segundos": 24.17,
+    "fecha_legible": "03/11/2025 19:03:04"
+  },
+  "estadisticas": {
+    "total_secciones": 6,
+    "secciones_exitosas": 6,
+    "secciones_fallidas": 0,
+    "tasa_exito_porcentaje": 100.0,
+    "total_errores": 0,
+    "total_datos_creados": 1
+  },
+  "secciones": [
+    {
+      "numero": 1,
+      "nombre": "Autenticacion",
+      "exito": true,
+      "timestamp": "2025-11-03T19:03:09.121170",
+      "detalles": {
+        "roles_autenticados": [
+          "Paciente",
+          "Admin"
+        ],
+        "paciente_id": 641
+      }
+    },
+    {
+      "numero": 2,
+      "nombre": "Consultar facturas",
+      "exito": true,
+      "timestamp": "2025-11-03T19:03:13.344669",
+      "detalles": {
+        "consultas_realizadas": 2
+      }
+    },
+    {
+      "numero": 3,
+      "nombre": "Crear factura",
+      "exito": true,
+      "timestamp": "2025-11-03T19:03:17.553000",
+      "detalles": {
+        "factura_id": 4,
+        "monto": 450.0
+      }
+    },
+    {
+      "numero": 4,
+      "nombre": "Consultar detalle de factura",
+      "exito": true,
+      "timestamp": "2025-11-03T19:03:21.752002",
+      "detalles": {
+        "factura_id": 4,
+        "consultas_realizadas": 2
+      }
+    },
+    {
+      "numero": 5,
+      "nombre": "Registrar pago",
+      "exito": true,
+      "timestamp": "2025-11-03T19:03:23.873289",
+      "detalles": {
+        "factura_id": 4,
+        "monto": 450.0
+      }
+    },
+    {
+      "numero": 6,
+      "nombre": "Consultar pagos",
+      "exito": true,
+      "timestamp": "2025-11-03T19:03:28.189204",
+      "detalles": {
+        "consultas_realizadas": 2,
+        "factura_id": 4
+      }
+    }
+  ],
+  "datos_creados": {
+    "factura": [
+      {
+        "id": 4,
+        "datos": {
+          "monto": 450.0,
+          "fecha": "2025-11-03"
+        },
+        "timestamp": "2025-11-03T19:03:17.553008"
+      }
+    ]
+  },
+  "errores": [],
+  "resumen": {
+    "estado": "EXITOSO",
+    "mensaje": "Todas las 6 secciones ejecutadas exitosamente"
+  }
+}

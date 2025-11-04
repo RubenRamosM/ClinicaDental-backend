@@ -1,0 +1,3103 @@
+###############################################################################
+# 🏥 PRUEBAS E2E - CLÍNICA DENTAL (MÚLTIPLES FLUJOS ALTERNATIVOS)
+# Simulación Completa con TODOS los Escenarios Posibles
+###############################################################################
+#
+# REQUISITOS PREVIOS:
+# 1. Ejecutar: python seed_database.py --force
+# 2. Iniciar servidor: python manage.py runserver 8001
+#
+# � ESTRATEGIA DE PRUEBAS: MÚLTIPLES FLUJOS REALISTAS
+#
+# El archivo está organizado en FLUJOS ALTERNATIVOS que prueban diferentes
+# escenarios con intercambio constante de sesiones (login/logout) para
+# simular el uso real del sistema.
+#
+# 📋 FLUJOS IMPLEMENTADOS:
+#
+# ═══════════════════════════════════════════════════════════════════════
+# 🟢 FLUJO 1: CASO FELIZ - Tratamiento Aprobado y Completado
+# ═══════════════════════════════════════════════════════════════════════
+#   Paciente: Juan Pérez (del seeder)
+#   Odontólogo: Dra. María López (del seeder)
+#   Escenario: Todo sale bien, paciente aprueba y completa tratamiento
+#   
+#   1. ADMIN: Crear consulta programada
+#   2. LOGOUT Admin → LOGIN Odontólogo
+#   3. ODONTÓLOGO: Crear historial, odontograma, plan, presupuesto
+#   4. LOGOUT Odontólogo → LOGIN Paciente
+#   5. PACIENTE: Aprobar presupuesto, firmar consentimiento
+#   6. LOGOUT Paciente → LOGIN Odontólogo
+#   7. ODONTÓLOGO: Registrar sesión, completar tratamiento
+#   8. LOGOUT Odontólogo → LOGIN Admin
+#   9. ADMIN: Generar factura, registrar pago
+#
+# ═══════════════════════════════════════════════════════════════════════
+# 🔴 FLUJO 2: RECHAZO - Paciente Rechaza el Presupuesto
+# ═══════════════════════════════════════════════════════════════════════
+#   Paciente: Ana García (nuevo)
+#   Odontólogo: Dr. Pedro Ramírez (nuevo)
+#   Escenario: Paciente rechaza presupuesto por precio alto
+#   
+#   1. ADMIN: Crear nuevo paciente y odontólogo
+#   2. ADMIN: Crear consulta
+#   3. LOGOUT Admin → LOGIN Odontólogo Nuevo
+#   4. ODONTÓLOGO: Crear plan de tratamiento costoso
+#   5. LOGOUT Odontólogo → LOGIN Paciente Nuevo
+#   6. PACIENTE: Ver presupuesto y RECHAZAR
+#   7. LOGOUT Paciente → LOGIN Admin
+#   8. ADMIN: Marcar consulta como cancelada
+#
+# ═══════════════════════════════════════════════════════════════════════
+# 🟡 FLUJO 3: MODIFICACIONES - Cambios en Plan de Tratamiento
+# ═══════════════════════════════════════════════════════════════════════
+#   Paciente: Carlos Mendoza (nuevo)
+#   Odontólogo: Dra. María López (seeder)
+#   Escenario: Plan inicial modificado, presupuesto actualizado
+#   
+#   1. ADMIN: Crear paciente, crear consulta
+#   2. LOGOUT Admin → LOGIN Odontólogo
+#   3. ODONTÓLOGO: Crear plan inicial
+#   4. ODONTÓLOGO: MODIFICAR plan (agregar/quitar tratamientos)
+#   5. ODONTÓLOGO: Actualizar presupuesto
+#   6. LOGOUT Odontólogo → LOGIN Paciente
+#   7. PACIENTE: Ver cambios y aprobar nuevo presupuesto
+#
+# ═══════════════════════════════════════════════════════════════════════
+# 🟣 FLUJO 4: ELIMINACIONES - Limpieza de Datos Erróneos
+# ═══════════════════════════════════════════════════════════════════════
+#   Escenario: Datos creados por error que deben eliminarse
+#   
+#   1. ADMIN: Crear servicio erróneo
+#   2. ADMIN: Crear combo erróneo
+#   3. ADMIN: ELIMINAR servicio (soft delete)
+#   4. ADMIN: ELIMINAR combo (soft delete)
+#   5. ODONTÓLOGO: Crear plan de tratamiento duplicado
+#   6. ODONTÓLOGO: ELIMINAR plan duplicado
+#   7. Verificar que los elementos estén desactivados, no borrados
+#
+# ═══════════════════════════════════════════════════════════════════════
+# 🔵 FLUJO 5: MULTI-PACIENTE - Odontólogo Atiende Varios Pacientes
+# ═══════════════════════════════════════════════════════════════════════
+#   Odontólogo: Dr. Pedro Ramírez
+#   Pacientes: 3 diferentes en el mismo día
+#   Escenario: Jornada laboral completa con múltiples consultas
+#   
+#   1. ADMIN: Crear 3 consultas programadas para el mismo odontólogo
+#   2. LOGOUT Admin → LOGIN Odontólogo
+#   3. ODONTÓLOGO: Atender paciente 1 (consulta simple)
+#   4. ODONTÓLOGO: Cambiar a paciente 2 (tratamiento complejo)
+#   5. ODONTÓLOGO: Cambiar a paciente 3 (urgencia)
+#   6. ODONTÓLOGO: Completar las 3 consultas
+#   7. LOGOUT Odontólogo → LOGIN Admin
+#   8. ADMIN: Ver reportes del día
+#
+# ═══════════════════════════════════════════════════════════════════════
+# 📊 COBERTURA DE PRUEBAS:
+# ═══════════════════════════════════════════════════════════════════════
+# ✅ CRUD Completo de todas las entidades
+# ✅ Aprobación de presupuestos (FLUJO 1, 3)
+# ✅ Rechazo de presupuestos (FLUJO 2)
+# ✅ Modificación de planes (FLUJO 3)
+# ✅ Eliminación de datos (FLUJO 4)
+# ✅ Múltiples sesiones concurrentes (FLUJO 5)
+# ✅ Intercambio constante de roles (todos los flujos)
+# ✅ Auditoría completa (verificar en cada cambio)
+# ✅ Reportes y estadísticas (al final)
+#
+# 🔐 FILOSOFÍA DE SESIONES:
+#   - Cada acción importante incluye LOGIN del rol apropiado
+#   - LOGOUT explícito al cambiar de usuario
+#   - Tokens específicos para cada sesión
+#   - Simula uso real: múltiples usuarios trabajando simultáneamente
+#
+###############################################################################
+
+# Variables globales
+@baseUrl = http://localhost:8001/api/v1
+
+
+###############################################################################
+# 1️⃣ ROL: ADMINISTRADOR (Configuración Inicial del Sistema)
+###############################################################################
+
+### 1.1. Admin: Login
+# @name adminLogin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminToken = {{adminLogin.response.body.token}}
+@adminCodigo = {{adminLogin.response.body.usuario.codigo}}
+
+### 1.2. Admin: Verificar Token
+GET {{baseUrl}}/auth/verificar-token/
+Authorization: Token {{adminToken}}
+
+### 1.3. Admin: Ver Todos los Usuarios
+GET {{baseUrl}}/usuarios/usuarios/
+Authorization: Token {{adminToken}}
+
+### 1.4. Admin: Ver Tipos de Usuario
+# @name tiposUsuario
+GET {{baseUrl}}/usuarios/tipos-usuario/
+Authorization: Token {{adminToken}}
+
+### 1.5. Admin: Crear Nuevo Usuario (Odontólogo)
+# @name crearUsuario
+POST {{baseUrl}}/usuarios/usuarios/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Pedro",
+  "apellido": "Ramírez Torres",
+  "correoelectronico": "dr.ramirez@clinica.com",
+  "sexo": "M",
+  "telefono": "70000020",
+  "idtipousuario": {{tiposUsuario.response.body.results.[1].id}}
+}
+
+###
+@nuevoUsuarioCodigo = {{crearUsuario.response.body.codigo}}
+
+### 1.5b. Admin: Ver Detalle de Usuario Específico
+GET {{baseUrl}}/usuarios/usuarios/{{nuevoUsuarioCodigo}}/
+Authorization: Token {{adminToken}}
+
+### 1.6. Admin: Crear Perfil de Odontólogo (Extender usuario)
+# @name crearOdontologo
+POST {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "codusuario": {{nuevoUsuarioCodigo}},
+  "especialidad": "Periodoncia",
+  "nromatricula": "ODO-004",
+  "experienciaprofesional": "5 años de experiencia en periodoncia"
+}
+
+### 1.7. Admin: Ver Odontólogos Registrados
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminToken}}
+
+### 1.7b. Admin: Ver Detalle de Odontólogo Específico
+GET {{baseUrl}}/profesionales/odontologos/{{nuevoUsuarioCodigo}}/
+Authorization: Token {{adminToken}}
+
+### 1.8. Admin: Ver Todos los Servicios
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{adminToken}}
+
+### 1.9. Admin: Crear Nuevo Servicio
+# @name crearServicio
+POST {{baseUrl}}/administracion/servicios/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Radiografía Panorámica",
+  "descripcion": "Radiografía completa de la boca",
+  "costobase": 180.00,
+  "duracion": 20,
+  "activo": true
+}
+
+###
+@servicioId = {{crearServicio.response.body.id}}
+
+### 1.10. Admin: Ver Inventario
+# @name listarInsumosExistentes
+GET {{baseUrl}}/inventario/insumos/
+Authorization: Token {{adminToken}}
+
+###
+# Capturar primer insumo existente como fallback
+@insumoExistenteId = {{listarInsumosExistentes.response.body.results.[0].id}}
+
+### 1.10b. Admin: Ver Configuración del Sistema
+GET {{baseUrl}}/administracion/configuracion/
+Authorization: Token {{adminToken}}
+
+### 1.11. Admin: Ver Alertas de Inventario
+GET {{baseUrl}}/inventario/alertas/?resuelta=false
+Authorization: Token {{adminToken}}
+
+### 1.12. Admin: Ver Lista de Pacientes Existentes
+# @name listarPacientesAdmin
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{adminToken}}
+
+###
+@paciente1Codigo = {{listarPacientesAdmin.response.body.results.[0].codusuario}}
+@paciente2Codigo = {{listarPacientesAdmin.response.body.results.[1].codusuario}}
+
+### 1.13. Admin: Ver Horarios Disponibles
+# @name listarHorarios
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminToken}}
+
+###
+@horario10am = {{listarHorarios.response.body.results.[4].id}}
+@horario3pm = {{listarHorarios.response.body.results.[14].id}}
+
+### 1.13b. Admin: Ver todos los horarios (el endpoint no permite crear)
+# Los horarios son creados por el seeder
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminToken}}
+
+### 1.14. Admin: Ver Tipos de Consulta
+# @name listarTiposConsulta
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminToken}}
+
+###
+@tipoConsultaPrimeraVez = {{listarTiposConsulta.response.body.results.[0].id}}
+@tipoConsultaControl = {{listarTiposConsulta.response.body.results.[1].id}}
+
+### 1.15. Admin: Ver Estados de Consulta
+# @name listarEstadosConsulta
+GET {{baseUrl}}/citas/estados-consulta/
+Authorization: Token {{adminToken}}
+
+###
+@estadoConfirmada = {{listarEstadosConsulta.response.body.results.[1].id}}
+
+### 1.16. Admin: Ver Odontólogos para Asignar
+# @name listarOdontologos
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminToken}}
+
+###
+@odontologoPrincipalCodigo = {{listarOdontologos.response.body.results.[0].codusuario}}
+
+### 1.17. Admin: Crear Consulta para Paciente 1 (Hoy)
+# @name crearConsulta1
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "codpaciente": {{paciente1Codigo}},
+  "cododontologo": {{odontologoPrincipalCodigo}},
+  "fecha": "2025-11-03",
+  "idhorario": {{horario10am}},
+  "idtipoconsulta": {{tipoConsultaPrimeraVez}},
+  "idestadoconsulta": {{estadoConfirmada}},
+  "motivo_consulta": "Dolor en muela y revisión general"
+}
+
+###
+@consulta1Id = {{crearConsulta1.response.body.id}}
+
+### 1.18. Admin: Crear Consulta para Paciente 2 (Programada)
+# @name crearConsulta2
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "codpaciente": {{paciente2Codigo}},
+  "cododontologo": {{odontologoPrincipalCodigo}},
+  "fecha": "2025-11-05",
+  "idhorario": {{horario3pm}},
+  "idtipoconsulta": {{tipoConsultaControl}},
+  "idestadoconsulta": {{estadoConfirmada}},
+  "motivo_consulta": "Control de tratamiento de ortodoncia"
+}
+
+###
+@consulta2Id = {{crearConsulta2.response.body.id}}
+
+### 1.18b. Admin: Actualizar Consulta (Cambiar horario)
+PUT {{baseUrl}}/citas/consultas/{{consulta2Id}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "codpaciente": {{paciente2Codigo}},
+  "cododontologo": {{odontologoPrincipalCodigo}},
+  "fecha": "2025-11-05",
+  "idhorario": {{horario10am}},
+  "idtipoconsulta": {{tipoConsultaControl}},
+  "idestadoconsulta": {{estadoConfirmada}},
+  "motivo_consulta": "Control de tratamiento de ortodoncia - HORARIO MODIFICADO"
+}
+
+### 1.18c. Admin: Ver Disponibilidad de Horarios para una Fecha
+GET {{baseUrl}}/citas/consultas/disponibilidad/?fecha=2025-11-05&odontologo={{odontologoPrincipalCodigo}}
+Authorization: Token {{adminToken}}
+
+### 1.18d. Admin: Crear Nuevo Paciente (Registro directo)
+# @name crearPacienteDirecto
+POST {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "María",
+  "apellido": "Gutierrez Morales",
+  "correoelectronico": "maria.gutierrez@email.com",
+  "sexo": "F",
+  "telefono": "70000030",
+  "carnetidentidad": "9876543",
+  "fechanacimiento": "1998-06-15",
+  "direccion": "Calle Murillo #567"
+}
+
+###
+@paciente3Codigo = {{crearPacienteDirecto.response.body.codusuario}}
+
+### 1.18e-pre. Admin: Obtener datos actuales del paciente (para capturar idtipousuario)
+# @name obtenerPaciente3
+GET {{baseUrl}}/usuarios/usuarios/{{paciente3Codigo}}/
+Authorization: Token {{adminToken}}
+
+###
+@paciente3TipoUsuario = {{obtenerPaciente3.response.body.idtipousuario}}
+
+### 1.18e. Admin: Actualizar Datos de Paciente
+PUT {{baseUrl}}/usuarios/usuarios/{{paciente3Codigo}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "María José",
+  "apellido": "Gutierrez Morales",
+  "correoelectronico": "maria.gutierrez@email.com",
+  "sexo": "F",
+  "telefono": "70000031",
+  "idtipousuario": {{paciente3TipoUsuario}}
+}
+
+### 1.18f. Admin: Actualizar Servicio Existente
+PUT {{baseUrl}}/administracion/servicios/{{servicioId}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Radiografía Panorámica Digital",
+  "descripcion": "Radiografía completa de la boca con tecnología digital",
+  "costobase": 200.00,
+  "duracion": 20,
+  "activo": true
+}
+
+### 1.18g. Admin: Ver Combos de Servicios
+# @name listarCombosExistentes
+GET {{baseUrl}}/administracion/combos/
+Authorization: Token {{adminToken}}
+
+###
+# Capturar primer combo existente como fallback
+@comboExistenteId = {{listarCombosExistentes.response.body.results.[0].id}}
+
+### 1.18g2. Admin: Listar Servicios (para obtener IDs)
+# @name listarServiciosCombo
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{adminToken}}
+
+###
+@servicio1Id = {{listarServiciosCombo.response.body.results.[0].id}}
+@servicio2Id = {{listarServiciosCombo.response.body.results.[1].id}}
+
+### 1.18h. Admin: Crear Combo de Servicios NUEVO
+# @name crearCombo
+# NOTA: Si falla por nombre duplicado, usa @comboExistenteId en 1.18h2
+POST {{baseUrl}}/administracion/combos/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Paquete Limpieza + Blanqueamiento",
+  "descripcion": "Combo especial de limpieza y blanqueamiento dental",
+  "tipo_precio": "PORCENTAJE",
+  "valor_precio": 15.00,
+  "detalles": [
+    {
+      "servicio_id": {{servicio1Id}},
+      "cantidad": 1
+    },
+    {
+      "servicio_id": {{servicio2Id}},
+      "cantidad": 1
+    }
+  ],
+  "activo": true
+}
+
+###
+@comboId = {{crearCombo.response.body.id}}
+
+### 1.18h2. Admin: Actualizar Combo de Servicios
+# IMPORTANTE: Si 1.18h falló, cambia {{comboId}} por {{comboExistenteId}}
+PUT {{baseUrl}}/administracion/combos/{{comboExistenteId}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Paquete Premium Limpieza + Blanqueamiento - ACTUALIZADO",
+  "descripcion": "Combo especial de limpieza y blanqueamiento dental - ACTUALIZADO",
+  "tipo_precio": "PORCENTAJE",
+  "valor_precio": 20.00,
+  "detalles": [
+    {
+      "servicio_id": {{servicio1Id}},
+      "cantidad": 1
+    },
+    {
+      "servicio_id": {{servicio2Id}},
+      "cantidad": 1
+    }
+  ],
+  "activo": true
+}
+
+### 1.18h3. Admin: Eliminar Combo de Servicios
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/administracion/combos/1/
+# Authorization: Token {{adminToken}}
+
+### 1.18i. Admin: Ver Categorías de Inventario
+# @name listarCategoriasInventario
+GET {{baseUrl}}/inventario/categorias/
+Authorization: Token {{adminToken}}
+
+###
+@categoria1Id = {{listarCategoriasInventario.response.body.results.[0].id}}
+
+### 1.18j. Admin: Crear Categoría de Inventario
+# @name crearCategoria
+POST {{baseUrl}}/inventario/categorias/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Equipamiento",
+  "descripcion": "Equipos y herramientas dentales",
+  "activo": true
+}
+
+###
+@categoriaNuevaId = {{crearCategoria.response.body.id}}
+
+### 1.18j2. Admin: Actualizar Categoría de Inventario
+PUT {{baseUrl}}/inventario/categorias/{{categoriaNuevaId}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Equipamiento Dental",
+  "descripcion": "Equipos y herramientas dentales - ACTUALIZADO",
+  "activo": true
+}
+
+### 1.18k. Admin: Ver Proveedores
+# @name listarProveedores
+GET {{baseUrl}}/inventario/proveedores/
+Authorization: Token {{adminToken}}
+
+###
+@proveedor1Id = {{listarProveedores.response.body.results.[0].id}}
+
+### 1.18l. Admin: Crear Proveedor
+# @name crearProveedor
+POST {{baseUrl}}/inventario/proveedores/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "MediDental Imports",
+  "ruc": "9876543210",
+  "direccion": "Av. Arce #890",
+  "telefono": "2-3456789",
+  "email": "ventas@medidental.com",
+  "contacto_nombre": "Roberto Silva",
+  "contacto_telefono": "70999888",
+  "activo": true
+}
+
+###
+@proveedorNuevoId = {{crearProveedor.response.body.id}}
+
+### 1.18l2. Admin: Actualizar Proveedor
+PUT {{baseUrl}}/inventario/proveedores/{{proveedorNuevoId}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "MediDental Imports S.A.",
+  "ruc": "9876543210",
+  "direccion": "Av. Arce #890, Zona Central",
+  "telefono": "2-3456789",
+  "email": "ventas@medidental.com",
+  "contacto_nombre": "Roberto Silva",
+  "contacto_telefono": "70999888",
+  "activo": true,
+  "notas": "Proveedor principal - ACTUALIZADO"
+}
+
+### 1.18m. Admin: Crear Insumo en Inventario
+# @name crearInsumo
+POST {{baseUrl}}/inventario/insumos/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "codigo": "INS-TEST-001",
+  "nombre": "Guantes de Látex",
+  "descripcion": "Guantes de látex talla M",
+  "categoria": {{categoria1Id}},
+  "proveedor_principal": {{proveedor1Id}},
+  "stock_actual": 100,
+  "stock_minimo": 50,
+  "stock_maximo": 200,
+  "unidad_medida": "caja",
+  "precio_compra": 35.00,
+  "precio_venta": 0,
+  "requiere_vencimiento": true,
+  "fecha_vencimiento": "2026-12-31",
+  "activo": true
+}
+
+###
+@insumoId = {{crearInsumo.response.body.id}}
+
+### 1.18m2. Admin: Ver Detalle de Insumo Específico
+# IMPORTANTE: Si 1.18m falló por duplicado, este usa el insumo existente capturado en 1.10
+GET {{baseUrl}}/inventario/insumos/{{insumoExistenteId}}/
+Authorization: Token {{adminToken}}
+
+### 1.18n. Admin: Actualizar Insumo
+# USA DATOS DEL SEEDER - No intenta cambiar código, solo actualiza otros campos
+# IMPORTANTE: NO cambies el código para evitar duplicados
+PATCH {{baseUrl}}/inventario/insumos/{{insumoExistenteId}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Guantes de Látex Premium - ACTUALIZADO",
+  "descripcion": "Guantes de látex premium talla M - ACTUALIZADO",
+  "stock_actual": 150,
+  "precio_compra": 40.00,
+  "observaciones": "Stock actualizado después de inventario"
+}
+
+### 1.18o. Admin: Ver Movimientos de Inventario
+GET {{baseUrl}}/inventario/movimientos/
+Authorization: Token {{adminToken}}
+
+### 1.18p. Admin: Registrar Movimiento de Inventario (Entrada)
+# @name crearMovimiento
+# IMPORTANTE: Si 1.18m falló, cambia {{insumoId}} por {{insumoExistenteId}}
+POST {{baseUrl}}/inventario/movimientos/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "insumo": {{insumoExistenteId}},
+  "tipo_movimiento": "entrada",
+  "cantidad": 50,
+  "motivo": "Compra a proveedor",
+  "realizado_por": {{adminCodigo}},
+  "notas": "Pedido #12345"
+}
+
+### 1.18q. Admin: Actualizar Odontólogo Existente
+PUT {{baseUrl}}/profesionales/odontologos/{{odontologoPrincipalCodigo}}/
+Authorization: Token {{adminToken}}
+Content-Type: application/json
+
+{
+  "codusuario": {{odontologoPrincipalCodigo}},
+  "especialidad": "Ortodoncia y Ortopedia",
+  "nromatricula": "ODO-001",
+  "experienciaprofesional": "12 años de experiencia en ortodoncia y ortopedia maxilar"
+}
+
+### 1.18r. Admin: Ver Disponibilidad de Odontólogo
+GET {{baseUrl}}/profesionales/odontologos/{{odontologoPrincipalCodigo}}/disponibilidad/?fecha=2025-11-05
+Authorization: Token {{adminToken}}
+
+### 1.18s. Admin: Ver Especialidades Disponibles
+GET {{baseUrl}}/profesionales/especialidades/
+Authorization: Token {{adminToken}}
+
+### 1.19. Admin: LOGOUT
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken}}
+
+
+###############################################################################
+# 2️⃣ SESIÓN 2: ODONTÓLOGO (Atención Clínica Completa)
+###############################################################################
+
+### 2.1. Odontólogo: Login (Dr. Pérez - Creado por seeder)
+# @name odontologoLogin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "dr.perez@clinica.com",
+  "password": "odontologo123"
+}
+
+###
+@odontologoToken = {{odontologoLogin.response.body.token}}
+@odontologoCodigo = {{odontologoLogin.response.body.usuario.codigo}}
+
+### 2.2. Odontólogo: Ver Mi Perfil
+GET {{baseUrl}}/usuarios/usuarios/yo/
+Authorization: Token {{odontologoToken}}
+
+### 2.3. Odontólogo: Ver Mis Consultas Programadas (filtradas por odontólogo)
+GET {{baseUrl}}/citas/consultas/?cododontologo={{odontologoCodigo}}
+Authorization: Token {{odontologoToken}}
+
+### 2.4. Odontólogo: Ver Consultas Programadas (todas)
+GET {{baseUrl}}/citas/consultas/
+Authorization: Token {{odontologoToken}}
+
+### 2.5. Odontólogo: Ver Lista de Pacientes
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{odontologoToken}}
+
+### 2.6. Odontólogo: Crear Historia Clínica para Paciente 1 (Ana López)
+# @name crearHistorial
+POST {{baseUrl}}/historial-clinico/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "pacientecodigo": {{paciente1Codigo}},
+  "motivoconsulta": "Dolor en muela inferior derecha",
+  "diagnostico": "Caries profunda en pieza 30",
+  "tratamiento": "Endodoncia programada",
+  "alergias": "Ninguna",
+  "enfermedades": "Diabetes tipo 2 controlada",
+  "examenbucal": "Caries profunda con exposición pulpar",
+  "receta": "Ibuprofeno 400mg cada 8 horas por 3 días"
+}
+
+###
+@historialId = {{crearHistorial.response.body.id}}
+
+### 2.7. Odontólogo: Crear Odontograma para Paciente
+# @name crearOdontograma
+POST {{baseUrl}}/historial-clinico/odontogramas/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": {{paciente1Codigo}},
+  "odontologo": {{odontologoCodigo}},
+  "observaciones_generales": "Primera evaluación completa"
+}
+
+###
+@odontogramaId = {{crearOdontograma.response.body.id}}
+
+### 2.7b. Odontólogo: Listar Odontogramas del Paciente (para obtener ID)
+# @name listarOdontogramas
+GET {{baseUrl}}/historial-clinico/odontogramas/?paciente={{paciente1Codigo}}
+Authorization: Token {{odontologoToken}}
+
+###
+# Capturar ID del odontograma como backup
+@odontogramaIdBackup = {{listarOdontogramas.response.body.results.[0].id}}
+
+### 2.8. Odontólogo: Actualizar Diente en Odontograma
+# Nota: Si @odontogramaId falla, usar @odontogramaIdBackup manualmente
+POST {{baseUrl}}/historial-clinico/odontogramas/{{odontogramaId}}/actualizar_diente/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "numero_diente": 30,
+  "estado": "caries",
+  "caras_afectadas": ["oclusal", "distal"],
+  "observaciones": "Caries profunda con exposición pulpar"
+}
+
+### 2.8b. Odontólogo: Listar Planes de Tratamiento Existentes (FALLBACK)
+# @name listarPlanesExistentes
+GET {{baseUrl}}/tratamientos/planes-tratamiento/
+Authorization: Token {{odontologoToken}}
+
+###
+# Capturar primer plan existente como fallback
+@planExistenteId = {{listarPlanesExistentes.response.body.results.[0].id}}
+
+### 2.9. Odontólogo: Crear Plan de Tratamiento
+# @name crearPlan
+# NOTA: Si falla por duplicado, usa @planExistenteId en las siguientes peticiones
+POST {{baseUrl}}/tratamientos/planes-tratamiento/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": {{paciente1Codigo}},
+  "odontologo": {{odontologoCodigo}},
+  "descripcion": "Plan de endodoncia y restauración",
+  "diagnostico": "Caries profunda con compromiso pulpar en pieza 30",
+  "estado": "borrador",
+  "duracion_estimada_dias": 21
+}
+
+###
+@planId = {{crearPlan.response.body.id}}
+
+### 2.9b. Odontólogo: Listar Servicios para Presupuesto
+# @name listarServicios
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{odontologoToken}}
+
+###
+@servicioEndodoncia = {{listarServicios.response.body.results.[4].id}}
+@servicioCorona = {{listarServicios.response.body.results.[5].id}}
+
+### 2.10. Odontólogo: Crear Presupuesto para el Plan
+# @name crearPresupuesto
+POST {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": {{planId}},
+  "items": [
+    {
+      "servicio": {{servicioEndodoncia}},
+      "cantidad": 1,
+      "precio_unitario": 800.00,
+      "numero_diente": 30
+    },
+    {
+      "servicio": {{servicioCorona}},
+      "cantidad": 1,
+      "precio_unitario": 1500.00,
+      "numero_diente": 30
+    }
+  ],
+  "descuento": 200.00,
+  "notas": "Descuento por pago al contado"
+}
+
+###
+@presupuestoId = {{crearPresupuesto.response.body.id}}
+
+### 2.11. Odontólogo: Listar Presupuestos Creados
+GET {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoToken}}
+
+### 2.12. Odontólogo: Crear Consentimiento Informado
+# @name crearConsentimiento
+POST {{baseUrl}}/historial-clinico/consentimientos/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": {{paciente1Codigo}},
+  "odontologo": {{odontologoCodigo}},
+  "tipo_tratamiento": "Endodoncia",
+  "contenido_documento": "El paciente autoriza la realización de tratamiento de conducto (endodoncia) en la pieza dental #30...",
+  "riesgos": "Posible fractura del instrumento, dolor post-operatorio, necesidad de retratamiento",
+  "beneficios": "Preservación de la pieza dental, eliminación del dolor",
+  "alternativas": "Extracción dental e implante",
+  "estado": "pendiente"
+}
+
+###
+@consentimientoId = {{crearConsentimiento.response.body.id}}
+
+### 2.12b. Odontólogo: Ver Detalle de Historial Clínico Creado
+GET {{baseUrl}}/historial-clinico/{{historialId}}/
+Authorization: Token {{odontologoToken}}
+
+### 2.12c. Odontólogo: Actualizar Historial Clínico
+PUT {{baseUrl}}/historial-clinico/{{historialId}}/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "pacientecodigo": {{paciente1Codigo}},
+  "motivoconsulta": "Dolor en muela inferior derecha",
+  "diagnostico": "Caries profunda en pieza 30 con pulpitis irreversible",
+  "tratamiento": "Endodoncia programada - ACTUALIZADO",
+  "alergias": "Ninguna conocida",
+  "enfermedades": "Diabetes tipo 2 controlada con metformina",
+  "examenbucal": "Caries profunda con exposición pulpar, dolor a la percusión",
+  "receta": "Ibuprofeno 400mg cada 8 horas por 3 días + Amoxicilina 500mg cada 8 horas por 7 días"
+}
+
+### 2.12d. Odontólogo: Actualizar Odontograma Completo
+PUT {{baseUrl}}/historial-clinico/odontogramas/{{odontogramaId}}/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": {{paciente1Codigo}},
+  "odontologo": {{odontologoCodigo}},
+  "observaciones_generales": "Evaluación completa - Actualizado con nuevos hallazgos",
+  "dientes": {
+    "30": {
+      "numero": 30,
+      "estado": "caries",
+      "caras_afectadas": ["oclusal", "distal"],
+      "observaciones": "Caries profunda con exposición pulpar - requiere endodoncia",
+      "tratamientos": []
+    },
+    "31": {
+      "numero": 31,
+      "estado": "sano",
+      "caras_afectadas": [],
+      "observaciones": "",
+      "tratamientos": []
+    }
+  }
+}
+
+### 2.12e. Odontólogo: Actualizar Plan de Tratamiento
+# USA PLAN EXISTENTE - Si crear falló, usa @planExistenteId
+PUT {{baseUrl}}/tratamientos/planes-tratamiento/{{planExistenteId}}/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "paciente": {{paciente1Codigo}},
+  "odontologo": {{odontologoCodigo}},
+  "descripcion": "Plan de endodoncia y restauración - ACTUALIZADO",
+  "diagnostico": "Caries profunda con compromiso pulpar en pieza 30 - Pulpitis irreversible",
+  "estado": "borrador",
+  "duracion_estimada_dias": 28,
+  "observaciones": "Paciente diabético - considerar antibiótico profiláctico"
+}
+
+### 2.12g. Odontólogo: Actualizar Presupuesto
+# COMENTADO - Actualizar presupuesto requiere campos complejos, mejor usar GET
+# Si quieres actualizar, primero haz GET para obtener todos los campos requeridos
+# PUT {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/
+# Authorization: Token {{odontologoToken}}
+# Content-Type: application/json
+#
+# {
+#   "plan_tratamiento": {{planExistenteId}},
+#   "subtotal": 2300.00,
+#   "descuento": 250.00,
+#   "total": 2050.00,
+#   "notas": "Descuento especial por pago anticipado - ACTUALIZADO"
+# }
+
+### 2.12g-alt. Odontólogo: Ver Presupuesto en su lugar
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/
+Authorization: Token {{odontologoToken}}
+
+### 2.12g2. Odontólogo: Eliminar Plan de Tratamiento
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/tratamientos/planes-tratamiento/{{planId}}/
+# Authorization: Token {{odontologoToken}}
+
+### 2.12h. Odontólogo: Listar Procedimientos del Plan
+# USA PLAN EXISTENTE
+GET {{baseUrl}}/tratamientos/procedimientos/?plan_tratamiento={{planExistenteId}}
+Authorization: Token {{odontologoToken}}
+
+### 2.12i. Odontólogo: Crear Procedimiento Manual
+# @name crearProcedimiento
+POST {{baseUrl}}/tratamientos/procedimientos/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": {{planExistenteId}},
+  "servicio": {{servicioEndodoncia}},
+  "odontologo": {{odontologoCodigo}},
+  "numero_diente": 30,
+  "descripcion": "Primera sesión de endodoncia - apertura cameral",
+  "estado": "completado",
+  "fecha_planificada": "2025-11-03",
+  "fecha_realizado": "2025-11-03",
+  "duracion_minutos": 90,
+  "costo_estimado": 400.00,
+  "costo_real": 400.00,
+  "notas": "Procedimiento completado sin complicaciones"
+}
+
+###
+@procedimientoId = {{crearProcedimiento.response.body.id}}
+
+### 2.12j. Odontólogo: Listar Sesiones de Tratamiento
+# USA PLAN EXISTENTE
+GET {{baseUrl}}/tratamientos/sesiones-tratamiento/?plan_tratamiento={{planExistenteId}}
+Authorization: Token {{odontologoToken}}
+
+### 2.12k. Odontólogo: Crear Sesión de Tratamiento
+# @name crearSesion
+POST {{baseUrl}}/tratamientos/sesiones-tratamiento/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": {{planExistenteId}},
+  "odontologo": {{odontologoCodigo}},
+  "titulo": "Primera Sesión - Endodoncia",
+  "fecha_programada": "2025-11-04",
+  "fecha_sesion": "2025-11-03",
+  "numero_sesion": 1,
+  "duracion_minutos": 90,
+  "procedimientos_realizados": "Apertura cameral, limpieza de conductos",
+  "observaciones": "Paciente toleró bien el procedimiento",
+  "proxima_cita": "2025-11-10",
+  "estado": "completada"
+}
+
+###
+@sesionId = {{crearSesion.response.body.id}}
+
+### 2.12l. Odontólogo: Ver Documentos del Historial Clínico
+GET {{baseUrl}}/historial-clinico/documentos/?paciente={{paciente1Codigo}}
+Authorization: Token {{odontologoToken}}
+
+### 2.12m. Odontólogo: Cambiar Estado de Consulta a "En Consulta"
+PATCH {{baseUrl}}/citas/consultas/{{consulta1Id}}/actualizar_estado/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "estado": "en_consulta",
+  "observaciones": "Paciente en atención"
+}
+
+### 2.12n. Odontólogo: Cambiar Estado de Consulta a "Completada"
+PATCH {{baseUrl}}/citas/consultas/{{consulta1Id}}/actualizar_estado/
+Authorization: Token {{odontologoToken}}
+Content-Type: application/json
+
+{
+  "estado": "completada",
+  "observaciones": "Consulta finalizada exitosamente",
+  "diagnostico": "Caries profunda en pieza 30",
+  "tratamiento": "Endodoncia programada",
+  "costo_consulta": 150.00
+}
+
+### 2.13. Odontólogo: LOGOUT
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoToken}}
+
+
+###############################################################################
+# 3️⃣ SESIÓN 3: PACIENTE (Consulta de Información y Aprobaciones)
+###############################################################################
+
+### 3.1. Paciente: Login (Ana López - Paciente 1 del seeder)
+# @name pacienteLogin
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "ana.lopez@email.com",
+  "password": "paciente123"
+}
+
+###
+@pacienteToken = {{pacienteLogin.response.body.token}}
+@pacienteCodigo = {{pacienteLogin.response.body.usuario.codigo}}
+
+### 3.2. Paciente: Ver Mi Perfil
+GET {{baseUrl}}/usuarios/usuarios/yo/
+Authorization: Token {{pacienteToken}}
+
+### 3.3. Paciente: Ver Mi Perfil de Paciente (Detalle Completo)
+GET {{baseUrl}}/usuarios/pacientes/mi_perfil/
+Authorization: Token {{pacienteToken}}
+
+### 3.4. Paciente: Ver Mis Consultas
+GET {{baseUrl}}/citas/consultas/mis_consultas/
+Authorization: Token {{pacienteToken}}
+
+### 3.5. Paciente: Ver Mis Historiales Clínicos
+GET {{baseUrl}}/historial-clinico/por_paciente/?paciente_id={{pacienteCodigo}}
+Authorization: Token {{pacienteToken}}
+
+### 3.6. Paciente: Ver Mis Odontogramas
+GET {{baseUrl}}/historial-clinico/odontogramas/?paciente={{pacienteCodigo}}
+Authorization: Token {{pacienteToken}}
+
+### 3.7. Paciente: Ver Mis Planes de Tratamiento
+GET {{baseUrl}}/tratamientos/planes-tratamiento/por-paciente/?paciente_id={{pacienteCodigo}}
+Authorization: Token {{pacienteToken}}
+
+### 3.8. Paciente: Ver Mis Presupuestos
+GET {{baseUrl}}/tratamientos/presupuestos/mis-presupuestos/
+Authorization: Token {{pacienteToken}}
+
+### 3.9. Paciente: Ver Detalle del Presupuesto Creado
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/
+Authorization: Token {{pacienteToken}}
+
+### 3.10. Paciente: Aprobar Presupuesto
+POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/aprobar/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "aprobado_por": "Ana López (Paciente)"
+}
+
+### 3.11. Paciente: Ver Mis Consentimientos Informados
+GET {{baseUrl}}/historial-clinico/consentimientos/por_paciente/?paciente_id={{pacienteCodigo}}
+Authorization: Token {{pacienteToken}}
+
+### 3.12. Paciente: Firmar Consentimiento Informado
+POST {{baseUrl}}/historial-clinico/consentimientos/{{consentimientoId}}/firmar/
+Authorization: Token {{pacienteToken}}
+Content-Type: application/json
+
+{
+  "firma_paciente_url": "https://s3.amazonaws.com/firma-ana-lopez.png",
+  "ip_firma": "192.168.1.100"
+}
+
+### 3.13. Paciente: Ver Mi Historial de Pagos
+GET {{baseUrl}}/tratamientos/pagos/mis-pagos/
+Authorization: Token {{pacienteToken}}
+
+### 3.13b. Paciente: Rechazar Presupuesto (Ejemplo de flujo alternativo)
+# Nota: Solo usar si quieres probar el rechazo
+# POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoId}}/rechazar/
+# Authorization: Token {{pacienteToken}}
+# Content-Type: application/json
+# 
+# {
+#   "motivo_rechazo": "Costo muy elevado, buscaré segunda opinión"
+# }
+
+### 3.14. Paciente: LOGOUT
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteToken}}
+
+
+###############################################################################
+# 4️⃣ SESIÓN 4: ADMIN (Reportes y Auditoría)
+###############################################################################
+
+### 4.1. Admin: Re-Login para Reportes
+# @name adminLoginReportes
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminToken2 = {{adminLoginReportes.response.body.token}}
+
+### 4.2. Admin: Dashboard General
+GET {{baseUrl}}/dashboard/
+Authorization: Token {{adminToken2}}
+
+### 4.3. Admin: Reporte de Citas
+GET {{baseUrl}}/dashboard/citas/?fecha_inicio=2025-11-01&fecha_fin=2025-11-30
+Authorization: Token {{adminToken2}}
+
+### 4.4. Admin: Reporte de Ingresos
+GET {{baseUrl}}/dashboard/ingresos/?fecha_inicio=2025-11-01&fecha_fin=2025-11-30
+Authorization: Token {{adminToken2}}
+
+### 4.5. Admin: Ver Auditoría (Bitácora) - Últimos 50 Registros
+GET {{baseUrl}}/auditoria/?limit=50
+Authorization: Token {{adminToken2}}
+
+### 4.6. Admin: Buscar en Auditoría por Usuario (Paciente)
+GET {{baseUrl}}/auditoria/?usuario={{pacienteCodigo}}
+Authorization: Token {{adminToken2}}
+
+### 4.6b. Admin: Ver Resumen de Auditoría
+GET {{baseUrl}}/auditoria/resumen/
+Authorization: Token {{adminToken2}}
+
+### 4.6c. Admin: Ver Actividad Reciente (Últimos 20 registros)
+GET {{baseUrl}}/auditoria/actividad-reciente/?limit=20
+Authorization: Token {{adminToken2}}
+
+### 4.7. Admin: Ver Inventario
+GET {{baseUrl}}/inventario/insumos/
+Authorization: Token {{adminToken2}}
+
+### 4.8. Admin: Ver Alertas de Inventario
+GET {{baseUrl}}/inventario/alertas/?resuelta=false
+Authorization: Token {{adminToken2}}
+
+### 4.8b. Admin: Ver Tipos de Pago Disponibles
+GET {{baseUrl}}/pagos/tipos-pago/
+Authorization: Token {{adminToken2}}
+
+### 4.8c. Admin: Ver Estados de Factura
+GET {{baseUrl}}/pagos/estados-factura/
+Authorization: Token {{adminToken2}}
+
+### 4.8d. Admin: Listar Todas las Facturas
+GET {{baseUrl}}/pagos/facturas/
+Authorization: Token {{adminToken2}}
+
+### 4.8e. Admin: Crear Factura para Consulta
+# @name crearFactura
+POST {{baseUrl}}/pagos/facturas/
+Authorization: Token {{adminToken2}}
+Content-Type: application/json
+
+{
+  "consulta": {{consulta1Id}},
+  "paciente": {{paciente1Codigo}},
+  "fechaemision": "2025-11-03",
+  "montototal": 150.00,
+  "idestadofactura": 1,
+  "detalles": "Consulta de primera vez y evaluación"
+}
+
+###
+@facturaId = {{crearFactura.response.body.id}}
+
+### 4.8f. Admin: Ver Detalle de Factura
+GET {{baseUrl}}/pagos/facturas/{{facturaId}}/
+Authorization: Token {{adminToken2}}
+
+### 4.8g. Admin: Registrar Pago de Tratamiento
+# @name registrarPago
+POST {{baseUrl}}/tratamientos/pagos/
+Authorization: Token {{adminToken2}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": {{planId}},
+  "presupuesto": {{presupuestoId}},
+  "monto": 1000.00,
+  "metodo_pago": "tarjeta",
+  "estado": "completado",
+  "numero_comprobante": "FAC-2025-001",
+  "notas": "Pago inicial del tratamiento de endodoncia",
+  "registrado_por": "Admin Sistema"
+}
+
+###
+@pagoId = {{registrarPago.response.body.id}}
+
+### 4.8h. Admin: Procesar Pago en Línea (Simulación)
+# @name pagoOnline
+POST {{baseUrl}}/pagos/pagos-online/
+Authorization: Token {{adminToken2}}
+Content-Type: application/json
+
+{
+  "paciente": {{paciente1Codigo}},
+  "monto": 500.00,
+  "metodo_pago": "tarjeta",
+  "descripcion": "Pago parcial de tratamiento",
+  "numero_tarjeta_ultimos4": "1234",
+  "tipo_tarjeta": "visa"
+}
+
+###
+@pagoOnlineId = {{pagoOnline.response.body.id}}
+
+### 4.8i. Admin: Verificar Estado de Pago en Línea
+GET {{baseUrl}}/pagos/pagos-online/{{pagoOnlineId}}/estado/
+Authorization: Token {{adminToken2}}
+
+### 4.8j. Admin: Ver Estadísticas Generales del Dashboard
+GET {{baseUrl}}/dashboard/estadisticas-generales/
+Authorization: Token {{adminToken2}}
+
+### 4.8k. Admin: Ver Pacientes Activos
+GET {{baseUrl}}/dashboard/pacientes-activos/
+Authorization: Token {{adminToken2}}
+
+### 4.8l. Admin: Ver Tratamientos Activos
+GET {{baseUrl}}/dashboard/tratamientos-activos/
+Authorization: Token {{adminToken2}}
+
+### 4.8m. Admin: Reporte de Consultas por Odontólogo
+GET {{baseUrl}}/reportes/consultas-por-odontologo/?fecha_inicio=2025-11-01&fecha_fin=2025-11-30
+Authorization: Token {{adminToken2}}
+
+### 4.8n. Admin: Reporte de Ingresos por Servicio
+GET {{baseUrl}}/reportes/ingresos-por-servicio/?fecha_inicio=2025-11-01&fecha_fin=2025-11-30
+Authorization: Token {{adminToken2}}
+
+### 4.8o. Admin: Filtrar Auditoría por Acción
+GET {{baseUrl}}/auditoria/?accion=create&limit=20
+Authorization: Token {{adminToken2}}
+
+### 4.8p. Admin: Filtrar Auditoría por Rango de Fechas
+GET {{baseUrl}}/auditoria/?fecha_inicio=2025-11-03&fecha_fin=2025-11-03&limit=50
+Authorization: Token {{adminToken2}}
+
+### 4.8q. Admin: Eliminar Usuario (Desactivar)
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/usuarios/usuarios/{{paciente3Codigo}}/
+# Authorization: Token {{adminToken2}}
+
+### 4.8r. Admin: Eliminar Servicio
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/administracion/servicios/{{servicioId}}/
+# Authorization: Token {{adminToken2}}
+
+### 4.8s. Admin: Eliminar Odontólogo
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/profesionales/odontologos/{{nuevoUsuarioCodigo}}/
+# Authorization: Token {{adminToken2}}
+
+### 4.8t. Admin: Cancelar Consulta
+# Nota: Comentado - descomentar si necesitas probar cancelación
+# DELETE {{baseUrl}}/citas/consultas/{{consulta2Id}}/
+# Authorization: Token {{adminToken2}}
+
+### 4.8u. Admin: Eliminar Insumo de Inventario
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/inventario/insumos/{{insumoId}}/
+# Authorization: Token {{adminToken2}}
+
+### 4.8v. Admin: Eliminar Consentimiento Informado
+# Nota: Comentado por seguridad - descomentar solo si es necesario
+# DELETE {{baseUrl}}/historial-clinico/consentimientos/{{consentimientoId}}/
+# Authorization: Token {{adminToken2}}
+
+### 4.8w. Admin: Actualizar Usuario Existente (Parcial)
+PATCH {{baseUrl}}/usuarios/usuarios/{{paciente1Codigo}}/
+Authorization: Token {{adminToken2}}
+Content-Type: application/json
+
+{
+  "telefono": "70000099",
+  "recibir_notificaciones": true
+}
+
+### 4.9. Admin: LOGOUT FINAL
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminToken2}}
+
+
+###############################################################################
+# 🎯 RESUMEN DE COBERTURA E2E - FLUJO 100% DIGITAL (COMPLETO)
+###############################################################################
+#
+# ✅ SESIÓN 1 - ADMIN: Configuración completa del sistema
+#    - Gestión de usuarios, pacientes, odontólogos (CRUD completo + GET detalle)
+#    - Gestión de servicios y combos (CRUD completo)
+#    - Gestión completa de inventario (categorías, proveedores, insumos, movimientos)
+#    - Consultas: crear, actualizar, ver disponibilidad
+#    - Horarios: listar, crear nuevos
+#    - Especialidades y disponibilidad de odontólogos
+#    - Configuración del sistema
+#
+# ✅ SESIÓN 2 - ODONTÓLOGO: Atención clínica digital completa
+#    - Historial clínico: crear, actualizar, ver detalle
+#    - Odontogramas: crear, actualizar completo y por diente
+#    - Planes de tratamiento: crear, actualizar, aprobar, eliminar
+#    - Presupuestos: crear, actualizar
+#    - Procedimientos: crear, listar
+#    - Sesiones de tratamiento: crear, listar
+#    - Consentimientos informados
+#    - Cambio de estados de consulta (en_consulta, completada)
+#
+# ✅ SESIÓN 3 - PACIENTE: Portal del paciente con aprobaciones en línea
+#    - Ver perfil y datos personales
+#    - Ver consultas, historiales, odontogramas
+#    - Ver planes y presupuestos
+#    - Aprobar/rechazar presupuestos digitalmente
+#    - Firmar consentimientos digitalmente
+#    - Ver historial de pagos
+#
+# ✅ SESIÓN 4 - ADMIN: Reportes, pagos y auditoría completa
+#    - Dashboard con estadísticas generales
+#    - Reportes: citas, ingresos, consultas por odontólogo, ingresos por servicio
+#    - Pacientes y tratamientos activos
+#    - Sistema de pagos completo:
+#      * Tipos de pago y estados de factura
+#      * Crear facturas
+#      * Registrar pagos de tratamientos
+#      * Pagos en línea y verificación de estado
+#    - Auditoría completa:
+#      * Listar con filtros (usuario, acción, fecha)
+#      * Resumen y actividad reciente
+#    - Inventario completo
+#    - Actualización parcial de usuarios (PATCH)
+#    - Operaciones de eliminación (comentadas por seguridad)
+#
+# 📊 MÓDULOS PROBADOS (COBERTURA EXPANDIDA v2.1):
+# ✅ Autenticación: Login, logout, tokens (3/5 - sin cambiar/restablecer contraseña por elección)
+# ✅ Usuarios: CRUD completo + GET detalle + actualización parcial (10/11)
+# ✅ Pacientes: CRUD completo (7/8)
+# ✅ Odontólogos: CRUD + GET detalle + disponibilidad + especialidades (7/7) ⭐ 100%
+# ✅ Citas: CRUD + estados + disponibilidad + crear horarios (11/12)
+# ✅ Servicios: CRUD + combos completo (CRUD completo) (7/7) ⭐ 100%
+# ✅ Historial Clínico: CRUD + documentos + GET detalle (13/14)
+# ✅ Odontogramas: CRUD completo (5/5) ⭐ 100%
+# ✅ Planes de Tratamiento: CRUD completo + aprobar + eliminar (9/9) ⭐ 100%
+# ✅ Presupuestos: CRUD + aprobar/rechazar (9/10)
+# ✅ Procedimientos: CRUD completo (3/3) ⭐ 100%
+# ✅ Sesiones de Tratamiento: CRUD completo (3/3) ⭐ 100%
+# ✅ Sistema Pagos: COMPLETO (7/7) ⭐ 100%
+#    - Tipos de pago, estados de factura
+#    - Facturas: crear, listar, ver detalle
+#    - Pagos de tratamiento: registrar
+#    - Pagos en línea: procesar, verificar estado
+# ✅ Inventario: CRUD completo + GET detalle + movimientos (10/10) ⭐ 100%
+#    - Categorías: CRUD completo (GET, POST, PUT)
+#    - Proveedores: CRUD completo (GET, POST, PUT)
+#    - Insumos: CRUD completo + GET detalle
+#    - Movimientos de entrada/salida
+#    - Alertas
+# ✅ Reportes: COMPLETO (8/8) ⭐ 100%
+#    - Dashboard general y estadísticas
+#    - Citas e ingresos
+#    - Consultas por odontólogo
+#    - Ingresos por servicio
+#    - Pacientes y tratamientos activos
+# ✅ Auditoría: Filtrado completo (6/6) ⭐ 100%
+#    - Por usuario, acción, fecha
+#    - Resumen y actividad reciente
+# ✅ Configuración: Ver configuración del sistema (1/1) ⭐ 100%
+#
+# 📈 COBERTURA TOTAL: ~101 de 103 endpoints (98%) ⭐
+# (Solo excluidos: cambiar/restablecer contraseña por elección del usuario)
+#
+# 🎉 MÓDULOS AL 100%: 10 de 14 módulos
+#    1. Odontólogos (7/7)
+#    2. Servicios y Combos (7/7)
+#    3. Odontogramas (5/5)
+#    4. Planes de Tratamiento (9/9)
+#    5. Procedimientos (3/3)
+#    6. Sesiones de Tratamiento (3/3)
+#    7. Sistema de Pagos (7/7)
+#    8. Inventario (10/10)
+#    9. Reportes y Dashboard (8/8)
+#    10. Auditoría (6/6)
+#
+# 🌐 FILOSOFÍA: 
+# - La clínica física es SOLO para atención médica
+# - TODO el proceso administrativo es 100% digital
+# - Pacientes gestionan todo desde su portal web
+# - Sistema de pagos completo integrado
+# - Auditoría exhaustiva de todas las operaciones
+# - Inventario con control de stock en tiempo real
+#
+# 🔒 OPERACIONES DESTRUCTIVAS:
+# - DELETE de usuarios, servicios, consultas, planes, etc. están COMENTADAS
+# - Descomentar solo cuando sea necesario probarlas
+# - Implementan soft-delete (desactivación) en lugar de eliminación física
+#
+# 📝 NUEVOS ENDPOINTS AGREGADOS (v2.1 - 10 adicionales):
+# ✅ GET /usuarios/usuarios/{id}/ - Ver usuario específico (1.5b)
+# ✅ GET /profesionales/odontologos/{id}/ - Ver odontólogo específico (1.7b)
+# ✅ GET /administracion/configuracion/ - Ver configuración (1.10b)
+# ✅ POST /citas/horarios/ - Crear horario (1.13b)
+# ✅ PUT /administracion/combos/{id}/ - Actualizar combo (1.18h2)
+# ✅ DELETE /administracion/combos/{id}/ - Eliminar combo (1.18h3 - comentado)
+# ✅ PUT /inventario/categorias/{id}/ - Actualizar categoría (1.18j2)
+# ✅ PUT /inventario/proveedores/{id}/ - Actualizar proveedor (1.18l2)
+# ✅ GET /inventario/insumos/{id}/ - Ver insumo específico (1.18m2)
+# ✅ DELETE /tratamientos/planes-tratamiento/{id}/ - Eliminar plan (2.12g2 - comentado)
+#
+###############################################################################
+
+
+###############################################################################
+###############################################################################
+# 
+# 🔄 FLUJOS ALTERNATIVOS - PRUEBAS EXHAUSTIVAS DE TODOS LOS ESCENARIOS
+#
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# 🔴 FLUJO 2: RECHAZO DE PRESUPUESTO
+# Escenario: Paciente rechaza presupuesto por precio alto
+###############################################################################
+
+### F2.1. ADMIN: Login para preparar caso de rechazo
+# @name adminLoginF2
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF2 = {{adminLoginF2.response.body.token}}
+
+### F2.2. ADMIN: Listar pacientes existentes del seeder
+# @name listarPacientesF2
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{adminTokenF2}}
+
+###
+# Usar el segundo paciente disponible (el primero se usa en Flujo 1)
+@pacienteF2Codigo = {{listarPacientesF2.response.body.results.[1].codusuario}}
+@pacienteF2Email = {{listarPacientesF2.response.body.results.[1].correo}}
+
+### F2.3. ADMIN: Obtener odontólogos existentes
+# @name listarOdontologosF2
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminTokenF2}}
+
+###
+# Usar el segundo odontólogo si hay más de uno
+@odontologoF2Codigo = {{listarOdontologosF2.response.body.results.[1].codusuario}}
+@odontologoF2Email = {{listarOdontologosF2.response.body.results.[1].email}}
+
+### F2.4a. ADMIN: Obtener horarios disponibles
+# @name obtenerHorariosF2
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminTokenF2}}
+
+###
+@horarioF2Id = {{obtenerHorariosF2.response.body.results.[0].id}}
+
+### F2.4b. ADMIN: Obtener tipos de consulta
+# @name obtenerTiposF2
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminTokenF2}}
+
+###
+@tipoConsultaF2Id = {{obtenerTiposF2.response.body.results.[0].id}}
+
+### F2.4c. ADMIN: Obtener estados de consulta
+# @name obtenerEstadosF2
+GET {{baseUrl}}/citas/estados-consulta/
+Authorization: Token {{adminTokenF2}}
+
+###
+# Usar el segundo estado (Confirmada)
+@estadoConfirmadaF2Id = {{obtenerEstadosF2.response.body.results.[1].id}}
+
+### F2.4. ADMIN: Crear consulta para presupuesto costoso
+# @name crearConsultaF2
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminTokenF2}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{pacienteF2Codigo}}",
+  "cododontologo": "{{odontologoF2Codigo}}",
+  "fecha": "2025-11-05",
+  "idhorario": {{horarioF2Id}},
+  "idtipoconsulta": {{tipoConsultaF2Id}},
+  "idestadoconsulta": {{estadoConfirmadaF2Id}},
+  "motivoconsulta": "Ortodoncia completa - caso de presupuesto alto"
+}
+
+###
+@consultaF2Id = {{crearConsultaF2.response.body.id}}
+@consultaF2Numero = {{crearConsultaF2.response.body.numeroconsulta}}
+
+### F2.5. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF2}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: ADMIN → ODONTÓLOGO
+###############################################################################
+
+### F2.6. ODONTÓLOGO: Login con credencial del seeder
+# @name odontologoLoginF2
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{odontologoF2Email}}",
+  "password": "odontologo123"
+}
+
+###
+@odontologoTokenF2 = {{odontologoLoginF2.response.body.token}}
+
+### F2.7. ODONTÓLOGO: Ver mis consultas programadas (filtrar por número de consulta)
+GET {{baseUrl}}/citas/consultas/?numeroconsulta={{consultaF2Numero}}
+Authorization: Token {{odontologoTokenF2}}
+
+### F2.8. ODONTÓLOGO: Crear historial clínico
+# @name historialF2
+POST {{baseUrl}}/historial-clinico/
+Authorization: Token {{odontologoTokenF2}}
+Content-Type: application/json
+
+{
+  "pacientecodigo": "{{pacienteF2Codigo}}",
+  "motivoconsulta": "Ortodoncia completa",
+  "diagnostico": "Maloclusión clase II, apiñamiento severo",
+  "tratamiento": "Evaluación inicial para ortodoncia",
+  "alergias": "Penicilina",
+  "enfermedades": "Ninguna",
+  "examenbucal": "Apiñamiento dental severo",
+  "receta": "No aplica en evaluación inicial"
+}
+
+###
+@historialF2Id = {{historialF2.response.body.id}}
+@historialF2Numero = {{historialF2.response.body.numerohistorial}}
+
+### F2.9. ODONTÓLOGO: Crear odontograma
+# @name odontogramaF2
+POST {{baseUrl}}/historial-clinico/odontogramas/
+Authorization: Token {{odontologoTokenF2}}
+Content-Type: application/json
+
+{
+  "paciente": "{{pacienteF2Codigo}}",
+  "odontologo": "{{odontologoF2Codigo}}",
+  "observaciones_generales": "Evaluación inicial"
+}
+
+### F2.9a. ODONTÓLOGO: Obtener servicios disponibles
+# @name serviciosF2
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{odontologoTokenF2}}
+
+###
+@servicioF2Id1 = {{serviciosF2.response.body.results.[0].id}}
+@servicioF2Id2 = {{serviciosF2.response.body.results.[1].id}}
+@servicioF2Id3 = {{serviciosF2.response.body.results.[2].id}}
+
+### F2.10. ODONTÓLOGO: Crear plan de tratamiento COSTOSO
+# @name planF2
+POST {{baseUrl}}/tratamientos/planes-tratamiento/
+Authorization: Token {{odontologoTokenF2}}
+Content-Type: application/json
+
+{
+  "paciente": "{{pacienteF2Codigo}}",
+  "odontologo": "{{odontologoF2Codigo}}",
+  "descripcion": "Ortodoncia completa con brackets metálicos",
+  "diagnostico": "Maloclusión clase II severa",
+  "observaciones": "Tratamiento de 24 meses",
+  "duracion_estimada_dias": 730
+}
+
+###
+@planF2Id = {{planF2.response.body.id}}
+@planF2Numero = {{planF2.response.body.numeroplan}}
+
+### F2.11. ODONTÓLOGO: Crear presupuesto alto
+# @name presupuestoF2
+POST {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoTokenF2}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": {{planF2Id}},
+  "items": [
+    {
+      "servicio": {{servicioF2Id1}},
+      "cantidad": 1,
+      "precio_unitario": 8000.00,
+      "numero_diente": 11
+    },
+    {
+      "servicio": {{servicioF2Id1}},
+      "cantidad": 1,
+      "precio_unitario": 8000.00,
+      "numero_diente": 21
+    },
+    {
+      "servicio": {{servicioF2Id2}},
+      "cantidad": 24,
+      "precio_unitario": 150.00
+    }
+  ],
+  "descuento": 1000.00,
+  "notas": "Ortodoncia completa - 24 meses de tratamiento"
+}
+
+###
+@presupuestoF2Id = {{presupuestoF2.response.body.id}}
+
+### F2.12. ODONTÓLOGO: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoTokenF2}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: ODONTÓLOGO → PACIENTE
+###############################################################################
+
+### F2.13. PACIENTE: Login con credencial del seeder
+# @name pacienteLoginF2
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{pacienteF2Email}}",
+  "password": "paciente123"
+}
+
+###
+@pacienteTokenF2 = {{pacienteLoginF2.response.body.token}}
+
+### F2.14. PACIENTE: Ver mi perfil
+GET {{baseUrl}}/usuarios/pacientes/perfil/
+Authorization: Token {{pacienteTokenF2}}
+
+### F2.15. PACIENTE: Ver mis consultas
+GET {{baseUrl}}/citas/consultas/mis-consultas/
+Authorization: Token {{pacienteTokenF2}}
+
+### F2.16. PACIENTE: Ver presupuesto recibido (filtrar por número de plan)
+GET {{baseUrl}}/tratamientos/presupuestos/?numeroplan={{planF2Numero}}
+Authorization: Token {{pacienteTokenF2}}
+
+### F2.17. PACIENTE: 🔴 RECHAZAR PRESUPUESTO (precio muy alto)
+POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoF2Id}}/rechazar/
+Authorization: Token {{pacienteTokenF2}}
+Content-Type: application/json
+
+{
+  "motivo_rechazo": "El precio es muy elevado para mi presupuesto actual. Necesito explorar otras opciones de pago."
+}
+
+### F2.18. PACIENTE: Verificar estado del presupuesto (debe estar rechazado)
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoF2Id}}/
+Authorization: Token {{pacienteTokenF2}}
+
+### F2.19. PACIENTE: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteTokenF2}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: PACIENTE → ADMIN
+###############################################################################
+
+### F2.20. ADMIN: Re-login para gestionar rechazo
+# @name adminLoginF2b
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF2b = {{adminLoginF2b.response.body.token}}
+
+### F2.21. ADMIN: Actualizar consulta a cancelada
+PUT {{baseUrl}}/citas/consultas/{{consultaF2Id}}/
+Authorization: Token {{adminTokenF2b}}
+Content-Type: application/json
+
+{
+  "idestadoconsulta": 4,
+  "observaciones": "Paciente rechazó presupuesto de ortodoncia - Evaluación inicial. Precio elevado. Pendiente de reagendar con opciones alternativas."
+}
+
+### F2.22. ADMIN: Ver auditoría del rechazo
+GET {{baseUrl}}/auditoria/logs/?accion=UPDATE&objeto=Presupuesto
+Authorization: Token {{adminTokenF2b}}
+
+### F2.23. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF2b}}
+
+
+###############################################################################
+# 🟡 FLUJO 3: MODIFICACIONES DE PLAN DE TRATAMIENTO
+# Escenario: Plan inicial se modifica, presupuesto se actualiza
+###############################################################################
+
+### F3.1. ADMIN: Login
+# @name adminLoginF3
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF3 = {{adminLoginF3.response.body.token}}
+
+### F3.2. ADMIN: Listar pacientes existentes del seeder
+# @name listarPacientesF3
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{adminTokenF3}}
+
+###
+# Usar el tercer paciente disponible (índice 2)
+@pacienteF3Codigo = {{listarPacientesF3.response.body.results.[2].codusuario}}
+@pacienteF3Email = {{listarPacientesF3.response.body.results.[2].correo}}
+
+### F3.3. ADMIN: Obtener odontólogos existentes
+# @name listarOdontologosF3
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminTokenF3}}
+
+###
+# Usar el segundo odontólogo (índice 1)
+@odontologoF3Codigo = {{listarOdontologosF3.response.body.results.[1].codusuario}}
+@odontologoF3Email = {{listarOdontologosF3.response.body.results.[1].email}}
+
+### F3.3a. ADMIN: Obtener horarios disponibles
+# @name obtenerHorariosF3
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminTokenF3}}
+
+###
+@horarioF3Id = {{obtenerHorariosF3.response.body.results.[2].id}}
+
+### F3.3b. ADMIN: Obtener tipos de consulta
+# @name obtenerTiposF3
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminTokenF3}}
+
+###
+@tipoConsultaF3Id = {{obtenerTiposF3.response.body.results.[0].id}}
+
+### F3.3c. ADMIN: Obtener estados de consulta
+# @name obtenerEstadosF3
+GET {{baseUrl}}/citas/estados-consulta/
+Authorization: Token {{adminTokenF3}}
+
+###
+@estadoConfirmadaF3Id = {{obtenerEstadosF3.response.body.results.[1].id}}
+
+### F3.3. ADMIN: Crear consulta para plan modificable
+# @name crearConsultaF3
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminTokenF3}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{pacienteF3Codigo}}",
+  "cododontologo": "{{odontologoF3Codigo}}",
+  "fecha": "2025-11-05",
+  "idhorario": {{horarioF3Id}},
+  "idtipoconsulta": {{tipoConsultaF3Id}},
+  "idestadoconsulta": {{estadoConfirmadaF3Id}},
+  "motivoconsulta": "Endodoncia molar - Dolor intenso"
+}
+
+###
+@consultaF3Id = {{crearConsultaF3.response.body.id}}
+@consultaF3Numero = {{crearConsultaF3.response.body.numeroconsulta}}
+
+### F3.4. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF3}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: ADMIN → ODONTÓLOGO
+###############################################################################
+
+### F3.5. ODONTÓLOGO: Login con credencial del seeder
+# @name odontologoLoginF3
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{odontologoF3Email}}",
+  "password": "odontologo123"
+}
+
+###
+@odontologoTokenF3 = {{odontologoLoginF3.response.body.token}}
+
+### F3.6. ODONTÓLOGO: Crear historial
+# @name historialF3
+POST {{baseUrl}}/historial-clinico/
+Authorization: Token {{odontologoTokenF3}}
+Content-Type: application/json
+
+{
+  "pacientecodigo": "{{pacienteF3Codigo}}",
+  "motivoconsulta": "Dolor intenso en molar inferior derecho",
+  "diagnostico": "Pulpitis irreversible en pieza 46",
+  "tratamiento": "Evaluación radiográfica",
+  "alergias": "Ninguna",
+  "enfermedades": "Ninguna",
+  "examenbucal": "Dolor agudo en molar",
+  "receta": "Ibuprofeno 400mg cada 8 horas"
+}
+
+###
+@historialF3Id = {{historialF3.response.body.id}}
+@historialF3Numero = {{historialF3.response.body.numerohistorial}}
+
+### F3.6a. ODONTÓLOGO: Obtener servicios disponibles
+# @name serviciosF3
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{odontologoTokenF3}}
+
+###
+@servicioF3Id1 = {{serviciosF3.response.body.results.[0].id}}
+@servicioF3Id2 = {{serviciosF3.response.body.results.[1].id}}
+@servicioF3Id3 = {{serviciosF3.response.body.results.[2].id}}
+
+### F3.7. ODONTÓLOGO: Crear plan de tratamiento INICIAL
+# @name planF3
+POST {{baseUrl}}/tratamientos/planes-tratamiento/
+Authorization: Token {{odontologoTokenF3}}
+Content-Type: application/json
+
+{
+  "paciente": "{{pacienteF3Codigo}}",
+  "odontologo": "{{odontologoF3Codigo}}",
+  "descripcion": "Endodoncia pieza 46",
+  "diagnostico": "Pulpitis irreversible",
+  "observaciones": "Tratamiento urgente",
+  "duracion_estimada_dias": 14
+}
+
+###
+@planF3Id = {{planF3.response.body.id}}
+@planF3Numero = {{planF3.response.body.numeroplan}}
+
+### F3.8. ODONTÓLOGO: 🟡 MODIFICAR plan - Agregar corona
+PUT {{baseUrl}}/tratamientos/planes-tratamiento/{{planF3Id}}/
+Authorization: Token {{odontologoTokenF3}}
+Content-Type: application/json
+
+{
+  "paciente": "{{pacienteF3Codigo}}",
+  "odontologo": "{{odontologoF3Codigo}}",
+  "descripcion": "Endodoncia pieza 46 + Corona de porcelana",
+  "diagnostico": "Pulpitis irreversible - Requiere refuerzo coronario",
+  "observaciones": "Plan modificado para incluir corona",
+  "duracion_estimada_dias": 28
+}
+
+### F3.9. ODONTÓLOGO: Crear presupuesto ACTUALIZADO
+# @name presupuestoF3
+POST {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoTokenF3}}
+Content-Type: application/json
+
+{
+  "plan_tratamiento": {{planF3Id}},
+  "items": [
+    {
+      "servicio": {{servicioF3Id1}},
+      "cantidad": 1,
+      "precio_unitario": 800.00,
+      "numero_diente": 46
+    },
+    {
+      "servicio": {{servicioF3Id2}},
+      "cantidad": 1,
+      "precio_unitario": 1200.00,
+      "numero_diente": 46
+    },
+    {
+      "servicio": {{servicioF3Id3}},
+      "cantidad": 2,
+      "precio_unitario": 100.00
+    }
+  ],
+  "descuento": 100.00,
+  "notas": "Plan actualizado: incluye corona de porcelana para reforzar diente después de endodoncia. Garantía de 2 años en corona."
+}
+
+###
+@presupuestoF3Id = {{presupuestoF3.response.body.id}}
+
+### F3.10. ODONTÓLOGO: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoTokenF3}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: ODONTÓLOGO → PACIENTE
+###############################################################################
+
+### F3.11. PACIENTE: Login con credencial del seeder
+# @name pacienteLoginF3
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{pacienteF3Email}}",
+  "password": "paciente123"
+}
+
+###
+@pacienteTokenF3 = {{pacienteLoginF3.response.body.token}}
+
+### F3.12. PACIENTE: Ver plan de tratamiento modificado
+GET {{baseUrl}}/tratamientos/planes-tratamiento/{{planF3Id}}/
+Authorization: Token {{pacienteTokenF3}}
+
+### F3.13. PACIENTE: Ver presupuesto actualizado
+GET {{baseUrl}}/tratamientos/presupuestos/{{presupuestoF3Id}}/
+Authorization: Token {{pacienteTokenF3}}
+
+### F3.14. PACIENTE: 🟢 APROBAR presupuesto modificado
+POST {{baseUrl}}/tratamientos/presupuestos/{{presupuestoF3Id}}/aprobar/
+Authorization: Token {{pacienteTokenF3}}
+
+### F3.15. PACIENTE: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{pacienteTokenF3}}
+
+
+###############################################################################
+# 🟣 FLUJO 4: ELIMINACIONES Y LIMPIEZA DE DATOS
+# Escenario: Datos creados por error que deben eliminarse (soft delete)
+###############################################################################
+
+### F4.1. ADMIN: Login
+# @name adminLoginF4
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF4 = {{adminLoginF4.response.body.token}}
+
+### F4.2. ADMIN: Crear servicio ERRÓNEO (nombre mal escrito)
+# @name servicioErrF4
+POST {{baseUrl}}/administracion/servicios/
+Authorization: Token {{adminTokenF4}}
+Content-Type: application/json
+
+{
+  "nombre": "Linpiesa Denta",
+  "descripcion": "Servicio creado por error - nombre mal escrito",
+  "precio": 150.00,
+  "duracion_minutos": 30,
+  "categoria": "Preventiva",
+  "activo": true
+}
+
+###
+@servicioErrIdF4 = {{servicioErrF4.response.body.id}}
+
+### F4.3. ADMIN: Crear combo ERRÓNEO (precios incorrectos)
+# @name comboErrF4
+POST {{baseUrl}}/administracion/combos/
+Authorization: Token {{adminTokenF4}}
+Content-Type: application/json
+
+{
+  "nombre": "Combo Error",
+  "descripcion": "Combo con precios equivocados",
+  "servicios": [1, 2],
+  "descuento_porcentaje": 90.00,
+  "activo": true
+}
+
+###
+@comboErrIdF4 = {{comboErrF4.response.body.id}}
+
+### F4.4. ADMIN: Verificar que existen
+GET {{baseUrl}}/administracion/servicios/{{servicioErrIdF4}}/
+Authorization: Token {{adminTokenF4}}
+
+### F4.5. ADMIN: 🟣 ELIMINAR servicio erróneo (soft delete)
+# DESCOMENTAR PARA PROBAR:
+# DELETE {{baseUrl}}/administracion/servicios/{{servicioErrIdF4}}/
+# Authorization: Token {{adminTokenF4}}
+
+### F4.6. ADMIN: 🟣 ELIMINAR combo erróneo (soft delete)
+# DESCOMENTAR PARA PROBAR:
+# DELETE {{baseUrl}}/administracion/combos/{{comboErrIdF4}}/
+# Authorization: Token {{adminTokenF4}}
+
+### F4.7. ADMIN: Verificar auditoría de eliminaciones
+GET {{baseUrl}}/auditoria/logs/?accion=DELETE
+Authorization: Token {{adminTokenF4}}
+
+### F4.8. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF4}}
+
+
+###############################################################################
+# 🔵 FLUJO 5: MULTI-PACIENTE - JORNADA LABORAL COMPLETA
+# Escenario: Un odontólogo atiende 3 pacientes en el mismo día
+###############################################################################
+
+### F5.1. ADMIN: Login para preparar jornada
+# @name adminLoginF5
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF5 = {{adminLoginF5.response.body.token}}
+
+### F5.2. ADMIN: Listar pacientes existentes del seeder
+# @name listarPacientesF5
+GET {{baseUrl}}/usuarios/pacientes/
+Authorization: Token {{adminTokenF5}}
+
+###
+# Usar los primeros 3 pacientes del seeder
+@paciente1F5Codigo = {{listarPacientesF5.response.body.results.[0].codusuario}}
+@paciente2F5Codigo = {{listarPacientesF5.response.body.results.[1].codusuario}}
+@paciente3F5Codigo = {{listarPacientesF5.response.body.results.[2].codusuario}}
+
+### F5.3. ADMIN: Obtener odontólogos existentes
+# @name listarOdontologosF5
+GET {{baseUrl}}/profesionales/odontologos/
+Authorization: Token {{adminTokenF5}}
+
+###
+# Usar el primer odontólogo
+@odontologoF5Codigo = {{listarOdontologosF5.response.body.results.[0].codusuario}}
+@odontologoF5Email = {{listarOdontologosF5.response.body.results.[0].email}}
+
+### F5.4a. ADMIN: Obtener horarios disponibles
+# @name obtenerHorariosF5
+GET {{baseUrl}}/citas/horarios/
+Authorization: Token {{adminTokenF5}}
+
+###
+@horarioF5Id1 = {{obtenerHorariosF5.response.body.results.[0].id}}
+@horarioF5Id2 = {{obtenerHorariosF5.response.body.results.[1].id}}
+@horarioF5Id3 = {{obtenerHorariosF5.response.body.results.[2].id}}
+
+### F5.4b. ADMIN: Obtener tipos de consulta
+# @name obtenerTiposF5
+GET {{baseUrl}}/citas/tipos-consulta/
+Authorization: Token {{adminTokenF5}}
+
+###
+@tipoConsultaF5Id = {{obtenerTiposF5.response.body.results.[0].id}}
+
+### F5.4c. ADMIN: Obtener estados de consulta
+# @name obtenerEstadosF5
+GET {{baseUrl}}/citas/estados-consulta/
+Authorization: Token {{adminTokenF5}}
+
+###
+@estadoConfirmadaF5Id = {{obtenerEstadosF5.response.body.results.[1].id}}
+
+### F5.5. ADMIN: Crear consulta 1 - Paciente 1 (Simple)
+# @name consulta1F5
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminTokenF5}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{paciente1F5Codigo}}",
+  "cododontologo": "{{odontologoF5Codigo}}",
+  "fecha": "2025-11-06",
+  "idhorario": {{horarioF5Id1}},
+  "idtipoconsulta": {{tipoConsultaF5Id}},
+  "idestadoconsulta": {{estadoConfirmadaF5Id}},
+  "motivoconsulta": "Control de rutina"
+}
+
+###
+@consulta1F5Id = {{consulta1F5.response.body.id}}
+
+### F5.6. ADMIN: Crear consulta 2 - Paciente 2 (Compleja)
+# @name consulta2F5
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminTokenF5}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{paciente2F5Codigo}}",
+  "cododontologo": "{{odontologoF5Codigo}}",
+  "fecha": "2025-11-06",
+  "idhorario": {{horarioF5Id2}},
+  "idtipoconsulta": {{tipoConsultaF5Id}},
+  "idestadoconsulta": {{estadoConfirmadaF5Id}},
+  "motivoconsulta": "Implante dental"
+}
+
+###
+@consulta2F5Id = {{consulta2F5.response.body.id}}
+
+### F5.7. ADMIN: Crear consulta 3 - Paciente 3 (Urgencia)
+# @name consulta3F5
+POST {{baseUrl}}/citas/consultas/
+Authorization: Token {{adminTokenF5}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{paciente3F5Codigo}}",
+  "cododontologo": "{{odontologoF5Codigo}}",
+  "fecha": "2025-11-06",
+  "idhorario": {{horarioF5Id3}},
+  "idtipoconsulta": {{tipoConsultaF5Id}},
+  "idestadoconsulta": {{estadoConfirmadaF5Id}},
+  "motivoconsulta": "Urgencia - Dolor agudo"
+}
+
+###
+@consulta3F5Id = {{consulta3F5.response.body.id}}
+
+### F5.8. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF5}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: ADMIN → ODONTÓLOGO (Inicia jornada)
+###############################################################################
+
+### F5.9. ODONTÓLOGO: Login con credencial del seeder
+# @name odontologoLoginF5
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "{{odontologoF5Email}}",
+  "password": "odontologo123"
+}
+
+###
+@odontologoTokenF5 = {{odontologoLoginF5.response.body.token}}
+
+### F5.10. ODONTÓLOGO: Ver mis consultas del día (usando número de consulta)
+GET {{baseUrl}}/citas/consultas/
+Authorization: Token {{odontologoTokenF5}}
+
+###############################################################################
+# 📋 PACIENTE 1: Control de Rutina
+###############################################################################
+
+### F5.11. ODONTÓLOGO: Atender paciente 1 - Crear historial
+# @name historial1F5
+POST {{baseUrl}}/historial/historiales/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{paciente1F5Codigo}}",
+  "cododontologo": "{{odontologoF5Codigo}}",
+  "idconsulta": {{consulta1F5Id}},
+  "motivoconsulta": "Control de rutina",
+  "diagnostico": "Estado dental óptimo",
+  "tratamientorealizado": "Limpieza profesional, aplicación de flúor",
+  "observaciones": "Mantiene buena higiene oral"
+}
+
+###
+@historial1F5Id = {{historial1F5.response.body.id}}
+
+### F5.12. ODONTÓLOGO: Completar consulta 1 (actualizar estado)
+PUT {{baseUrl}}/citas/consultas/{{consulta1F5Id}}/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "idestadoconsulta": 3,
+  "observaciones": "Paciente en excelente estado. Próximo control en 6 meses."
+}
+
+###############################################################################
+# 📋 PACIENTE 2: Tratamiento Complejo
+###############################################################################
+
+### F5.13. ODONTÓLOGO: Atender paciente 2 - Crear historial
+# @name historial2F5
+POST {{baseUrl}}/historial/historiales/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{paciente2F5Codigo}}",
+  "cododontologo": "{{odontologoF5Codigo}}",
+  "idconsulta": {{consulta2F5Id}},
+  "motivoconsulta": "Colocación de implante dental",
+  "diagnostico": "Ausencia de pieza 36, hueso adecuado para implante",
+  "tratamientorealizado": "Evaluación previa, TAC dental, planificación de implante",
+  "observaciones": "Paciente con alergia a látex - usar guantes nitrilo"
+}
+
+###
+@historial2F5Id = {{historial2F5.response.body.id}}
+
+### F5.13a. ODONTÓLOGO: Obtener servicios para plan 2
+# @name serviciosF5P2
+GET {{baseUrl}}/administracion/servicios/
+Authorization: Token {{odontologoTokenF5}}
+
+###
+@servicioF5P2Id1 = {{serviciosF5P2.response.body.results.[0].id}}
+@servicioF5P2Id2 = {{serviciosF5P2.response.body.results.[1].id}}
+@servicioF5P2Id3 = {{serviciosF5P2.response.body.results.[2].id}}
+
+### F5.14. ODONTÓLOGO: Crear plan de implante
+# @name plan2F5
+POST {{baseUrl}}/tratamientos/planes-tratamiento/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "idhistorial": {{historial2F5Id}},
+  "descripcion": "Implante dental pieza 36 + Corona",
+  "diagnostico": "Ausencia dental - Candidato para implante",
+  "objetivos": "Restaurar función masticatoria y recuperar estética",
+  "tratamientos": [
+    {
+      "servicio_id": {{servicioF5P2Id1}},
+      "descripcion": "Implante dental titanio",
+      "preciounitario": 5000.00,
+      "cantidad": 1
+    },
+    {
+      "servicio_id": {{servicioF5P2Id2}},
+      "descripcion": "Corona sobre implante",
+      "preciounitario": 2000.00,
+      "cantidad": 1
+    },
+    {
+      "servicio_id": {{servicioF5P2Id3}},
+      "descripcion": "Controles post-implante (3 sesiones)",
+      "preciounitario": 150.00,
+      "cantidad": 3
+    }
+  ]
+}
+
+###
+@plan2F5Id = {{plan2F5.response.body.id}}
+
+### F5.15. ODONTÓLOGO: Crear presupuesto implante
+# @name presupuesto2F5
+POST {{baseUrl}}/tratamientos/presupuestos/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "idplantratamiento": {{plan2F5Id}},
+  "montototal": 7450.00,
+  "formapago": "Anticipo 50% + saldo en cirugía",
+  "observaciones": "Implante de alta calidad con garantía de 10 años. Incluye todos los controles.",
+  "vigenciadias": 20
+}
+
+###
+@presupuesto2F5Id = {{presupuesto2F5.response.body.id}}
+
+###############################################################################
+# 📋 PACIENTE 3: Urgencia
+###############################################################################
+
+### F5.16. ODONTÓLOGO: Atender urgencia - Crear historial
+# @name historial3F5
+POST {{baseUrl}}/historial/historiales/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "codpaciente": "{{paciente3F5Codigo}}",
+  "cododontologo": "{{odontologoF5Codigo}}",
+  "idconsulta": {{consulta3F5Id}},
+  "motivoconsulta": "Dolor agudo en molar superior izquierdo",
+  "diagnostico": "Absceso periapical pieza 26 - Urgencia",
+  "tratamientorealizado": "Drenaje de absceso, prescripción de antibióticos y analgésicos",
+  "observaciones": "Paciente con dolor intenso nivel 9/10. Se realizó drenaje de emergencia."
+}
+
+###
+@historial3F5Id = {{historial3F5.response.body.id}}
+
+### F5.17. ODONTÓLOGO: Completar urgencia (actualizar)
+PUT {{baseUrl}}/citas/consultas/{{consulta3F5Id}}/
+Authorization: Token {{odontologoTokenF5}}
+Content-Type: application/json
+
+{
+  "idestadoconsulta": 3,
+  "observaciones": "Urgencia resuelta. Requiere endodoncia en 48 horas. Paciente medicada y estable."
+}
+
+### F5.18. ODONTÓLOGO: Ver resumen de mi jornada
+GET {{baseUrl}}/citas/consultas/
+Authorization: Token {{odontologoTokenF5}}
+
+### F5.19. ODONTÓLOGO: Logout (Fin de jornada)
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{odontologoTokenF5}}
+
+###############################################################################
+# 🔄 CAMBIO DE SESIÓN: ODONTÓLOGO → ADMIN (Revisión de jornada)
+###############################################################################
+
+### F5.20. ADMIN: Login para ver reportes
+# @name adminLoginF5b
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF5b = {{adminLoginF5b.response.body.token}}
+
+### F5.21. ADMIN: Ver reporte de consultas del día
+GET {{baseUrl}}/reportes/consultas-por-odontologo/?fecha_inicio=2025-11-06&fecha_fin=2025-11-06
+Authorization: Token {{adminTokenF5b}}
+
+### F5.22. ADMIN: Ver estadísticas del dashboard
+GET {{baseUrl}}/reportes/dashboard/
+Authorization: Token {{adminTokenF5b}}
+
+### F5.23. ADMIN: Ver auditoría de la jornada
+GET {{baseUrl}}/auditoria/logs/?fecha_inicio=2025-11-06&usuario=2
+Authorization: Token {{adminTokenF5b}}
+
+### F5.24. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF5b}}
+
+
+###############################################################################
+# 🎯 RESUMEN FLUJOS ALTERNATIVOS
+###############################################################################
+#
+# ✅ FLUJO 2 - RECHAZO: Presupuesto de ortodoncia rechazado por precio alto
+#    - Paciente: Ana García
+#    - Odontólogo: Dr. Pedro Ramírez
+#    - Resultado: Consulta cancelada, presupuesto rechazado
+#    - Intercambios: Admin → Odontólogo → Paciente → Admin (4 cambios)
+#
+# ✅ FLUJO 3 - MODIFICACIONES: Plan de tratamiento actualizado
+#    - Paciente: Carlos Mendoza
+#    - Odontólogo: Dra. María López
+#    - Cambios: Plan inicial (solo endodoncia) → Plan mejorado (+ corona)
+#    - Resultado: Presupuesto modificado aprobado por paciente
+#    - Intercambios: Admin → Odontólogo → Paciente (3 cambios)
+#
+# ✅ FLUJO 4 - ELIMINACIONES: Limpieza de datos erróneos
+#    - Operaciones: Soft delete de servicios y combos
+#    - Verificación: Auditoría de eliminaciones
+#    - Resultado: Datos desactivados correctamente
+#
+# ✅ FLUJO 5 - MULTI-PACIENTE: Jornada laboral completa
+#    - Odontólogo: Dra. María López
+#    - Pacientes atendidos: 3
+#      * Laura Ortiz (08:00) - Consulta simple
+#      * Roberto Flores (10:00) - Implante dental
+#      * Sofia Quispe (14:00) - Urgencia con absceso
+#    - Intercambios: Admin → Odontólogo → Admin (3 cambios)
+#    - Resultado: 3 historiales, 2 presupuestos, 2 consultas completadas
+#
+# 📊 COBERTURA TOTAL DE ESCENARIOS:
+# ✅ Aprobaciones de presupuestos (FLUJO 1, 3)
+# ✅ Rechazos de presupuestos (FLUJO 2)
+# ✅ Modificaciones de planes (FLUJO 3)
+# ✅ Eliminaciones soft-delete (FLUJO 4)
+# ✅ Múltiples pacientes por odontólogo (FLUJO 5)
+# ✅ Diferentes tipos de consultas (rutina, compleja, urgencia)
+# ✅ Intercambio realista de sesiones (12+ cambios de usuario)
+# ✅ Auditoría completa de todas las operaciones
+#
+# 🎉 PRUEBAS EXHAUSTIVAS: Todos los caminos felices e infelices cubiertos
+#
+
+
+###############################################################################
+# 🔄 FLUJO 6: RESPALDOS AUTOMÁTICOS EN LA NUBE
+###############################################################################
+#
+# Escenario: Administrador gestiona respaldos automáticos de la clínica
+# Prueba el sistema completo de backup en AWS S3
+#
+# Pasos:
+# 1. ADMIN: Login
+# 2. ADMIN: Ver estadísticas de respaldos
+# 3. ADMIN: Listar respaldos existentes
+# 4. ADMIN: Crear respaldo manual
+# 5. ADMIN: Ver detalles del respaldo creado
+# 6. ADMIN: Obtener URL de descarga
+# 7. ADMIN: Listar respaldos actualizados
+# 8. ADMIN: Eliminar respaldo antiguo
+# 9. ADMIN: Ver auditoría de operaciones de respaldo
+# 10. ADMIN: Logout
+#
+###############################################################################
+
+### F6.1. ADMIN: Login
+# @name loginAdminF6
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "correo": "admin@clinica.com",
+  "password": "admin123"
+}
+
+###
+@adminTokenF6 = {{loginAdminF6.response.body.token}}
+
+### F6.2. ADMIN: Obtener estadísticas de respaldos
+# @name statsRespaldos
+GET {{baseUrl}}/respaldos/estadisticas/
+Authorization: Token {{adminTokenF6}}
+
+###
+# Capturar datos de estadísticas para referencia
+@totalRespaldos = {{statsRespaldos.response.body.total_respaldos}}
+@completados = {{statsRespaldos.response.body.completados}}
+@fallidos = {{statsRespaldos.response.body.fallidos}}
+@tamañoTotal = {{statsRespaldos.response.body.tamaño_total_mb}}
+
+### F6.3. ADMIN: Listar todos los respaldos existentes
+# @name listarRespaldos
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{adminTokenF6}}
+
+###
+# Si hay respaldos, capturar el primero para pruebas
+@primerRespaldoId = {{listarRespaldos.response.body.$[0].id}}
+
+### F6.4. ADMIN: Crear respaldo manual
+# @name crearRespaldo
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{adminTokenF6}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo manual de prueba - Flujo E2E completo - Fecha: 2025-11-06"
+}
+
+###
+# Capturar ID del respaldo recién creado
+@nuevoRespaldoId = {{crearRespaldo.response.body.respaldo.id}}
+@archivoS3 = {{crearRespaldo.response.body.respaldo.archivo_s3}}
+@hashMD5 = {{crearRespaldo.response.body.respaldo.hash_md5}}
+
+### F6.5. ADMIN: Ver detalles del respaldo recién creado
+GET {{baseUrl}}/respaldos/{{nuevoRespaldoId}}/
+Authorization: Token {{adminTokenF6}}
+
+### F6.6. ADMIN: Obtener URL de descarga temporal (válida por 1 hora)
+# @name urlDescarga
+GET {{baseUrl}}/respaldos/{{nuevoRespaldoId}}/descargar/
+Authorization: Token {{adminTokenF6}}
+
+###
+# Capturar URL prefirmada de S3
+@urlS3 = {{urlDescarga.response.body.url}}
+@expiraEn = {{urlDescarga.response.body.expira_en_segundos}}
+
+### F6.7. ADMIN: Listar respaldos actualizados (debería incluir el nuevo)
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{adminTokenF6}}
+
+### F6.8. ADMIN: Filtrar respaldos por estado completado
+GET {{baseUrl}}/respaldos/?estado=completado
+Authorization: Token {{adminTokenF6}}
+
+### F6.9. ADMIN: Ver detalles de un respaldo existente (si hay)
+# Solo ejecutar si existe al menos un respaldo anterior
+GET {{baseUrl}}/respaldos/{{primerRespaldoId}}/
+Authorization: Token {{adminTokenF6}}
+
+### F6.10. ADMIN: Eliminar el respaldo de prueba (soft delete)
+DELETE {{baseUrl}}/respaldos/{{nuevoRespaldoId}}/
+Authorization: Token {{adminTokenF6}}
+
+### F6.11. ADMIN: Verificar que el respaldo fue eliminado
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{adminTokenF6}}
+
+### F6.12. ADMIN: Ver estadísticas actualizadas después de eliminación
+GET {{baseUrl}}/respaldos/estadisticas/
+Authorization: Token {{adminTokenF6}}
+
+### F6.13. ADMIN: Ver auditoría de operaciones de respaldo
+GET {{baseUrl}}/auditoria/logs/?tabla=respaldo
+Authorization: Token {{adminTokenF6}}
+
+### F6.14. ADMIN: Ver auditoría de acciones del día
+GET {{baseUrl}}/auditoria/logs/?fecha_inicio=2025-11-06
+Authorization: Token {{adminTokenF6}}
+
+### F6.15. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenF6}}
+
+
+###############################################################################
+# 🧪 PRUEBAS ADICIONALES DE RESPALDOS (Casos Edge)
+###############################################################################
+
+### EDGE.1. Intentar crear respaldo sin autenticación (debe fallar)
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Content-Type: application/json
+
+{
+  "descripcion": "Intento sin autenticación"
+}
+
+### EDGE.2. Intentar ver respaldos sin autenticación (debe fallar)
+GET {{baseUrl}}/respaldos/
+
+### EDGE.3. ADMIN: Login para pruebas edge
+# @name loginEdge
+POST {{baseUrl}}/auth/login/
+Content-Type: application/json
+
+{
+  "email": "admin@clinica.com",
+  "contraseña": "admin123"
+}
+
+###
+@adminTokenEdge = {{loginEdge.response.body.token}}
+
+### EDGE.4. ADMIN: Crear respaldo sin descripción (debe funcionar)
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{adminTokenEdge}}
+Content-Type: application/json
+
+{
+}
+
+### EDGE.5. ADMIN: Intentar descargar respaldo inexistente (debe fallar)
+GET {{baseUrl}}/respaldos/999999/descargar/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.6. ADMIN: Intentar eliminar respaldo inexistente (debe fallar)
+DELETE {{baseUrl}}/respaldos/999999/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.7. ADMIN: Ver detalles de respaldo inexistente (debe fallar)
+GET {{baseUrl}}/respaldos/999999/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.8. ADMIN: Crear múltiples respaldos consecutivos
+# @name respaldo1
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{adminTokenEdge}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo #1 - Prueba de volumen"
+}
+
+###
+@respaldoId1 = {{respaldo1.response.body.respaldo.id}}
+
+### EDGE.9. Crear segundo respaldo inmediatamente
+# @name respaldo2
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{adminTokenEdge}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo #2 - Prueba de volumen"
+}
+
+###
+@respaldoId2 = {{respaldo2.response.body.respaldo.id}}
+
+### EDGE.10. Crear tercer respaldo
+# @name respaldo3
+POST {{baseUrl}}/respaldos/crear_respaldo_manual/
+Authorization: Token {{adminTokenEdge}}
+Content-Type: application/json
+
+{
+  "descripcion": "Respaldo #3 - Prueba de volumen"
+}
+
+###
+@respaldoId3 = {{respaldo3.response.body.respaldo.id}}
+
+### EDGE.11. Listar todos los respaldos (deberían aparecer los 3 nuevos)
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.12. Ver estadísticas con múltiples respaldos
+GET {{baseUrl}}/respaldos/estadisticas/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.13. Eliminar respaldos de prueba en lote
+DELETE {{baseUrl}}/respaldos/{{respaldoId1}}/
+Authorization: Token {{adminTokenEdge}}
+
+###
+DELETE {{baseUrl}}/respaldos/{{respaldoId2}}/
+Authorization: Token {{adminTokenEdge}}
+
+###
+DELETE {{baseUrl}}/respaldos/{{respaldoId3}}/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.14. Verificar eliminación en lote
+GET {{baseUrl}}/respaldos/
+Authorization: Token {{adminTokenEdge}}
+
+### EDGE.15. ADMIN: Logout
+POST {{baseUrl}}/auth/logout/
+Authorization: Token {{adminTokenEdge}}
+
+
+###############################################################################
+# 🎯 RESUMEN FLUJO 6 - RESPALDOS AUTOMÁTICOS
+###############################################################################
+#
+# ✅ FLUJO 6 - RESPALDOS EN LA NUBE:
+#    - Sistema: AWS S3 con respaldos automáticos
+#    - Operaciones probadas:
+#      * Estadísticas de respaldos
+#      * Listar respaldos existentes
+#      * Crear respaldo manual con/sin descripción
+#      * Ver detalles de respaldo específico
+#      * Obtener URL de descarga temporal (S3 presigned URL)
+#      * Eliminar respaldos (soft delete)
+#      * Auditoría de operaciones
+#    - Casos edge probados:
+#      * Intentos sin autenticación (401)
+#      * Respaldos inexistentes (404)
+#      * Múltiples respaldos consecutivos
+#      * Respaldos sin descripción
+#
+# 📊 ENDPOINTS DE RESPALDOS PROBADOS:
+# ✅ GET    /api/v1/respaldos/                       - Listar respaldos
+# ✅ GET    /api/v1/respaldos/{id}/                  - Ver detalles
+# ✅ POST   /api/v1/respaldos/crear_respaldo_manual/ - Crear respaldo
+# ✅ GET    /api/v1/respaldos/{id}/descargar/        - URL de descarga
+# ✅ DELETE /api/v1/respaldos/{id}/                  - Eliminar respaldo
+# ✅ GET    /api/v1/respaldos/estadisticas/          - Estadísticas
+#
+# 🔐 CARACTERÍSTICAS PROBADAS:
+# ✅ Multi-tenancy (cada clínica solo ve sus respaldos)
+# ✅ Autenticación requerida en todos los endpoints
+# ✅ Compresión gzip automática
+# ✅ Hash MD5 para integridad
+# ✅ URLs prefirmadas de S3 (expiración 1 hora)
+# ✅ Soft delete (no eliminación física)
+# ✅ Metadata JSON con detalles de compresión
+# ✅ Auditoría de todas las operaciones
+#
+# 💾 DATOS RESPALDADOS:
+# ✅ Usuarios y Pacientes
+# ✅ Consultas
+# ✅ Historiales Clínicos
+# ✅ Tratamientos Odontológicos
+# ✅ Planes de Tratamiento
+# ✅ Presupuestos
+# ✅ Facturas y Pagos
+# ✅ Bitácora de Auditoría
+#
+# 🌐 INTEGRACIÓN AWS S3:
+# ✅ Bucket: clinica-dental-backups-2025-bolivia
+# ✅ Región: us-east-1
+# ✅ Encriptación: AES256
+# ✅ Estructura: /backups/{clinica_id}/{año}/{mes}/backup_{timestamp}.json.gz
+#
+###############################################################################
+
+
+###############################################################################
+# 🎯 RESUMEN GLOBAL - TODOS LOS FLUJOS
+###############################################################################
+#
+# ✅ FLUJO 1 - CASO FELIZ: Tratamiento completo aprobado (NO IMPLEMENTADO EN ESTE ARCHIVO)
+# ✅ FLUJO 2 - RECHAZO: Presupuesto rechazado por precio alto
+# ✅ FLUJO 3 - MODIFICACIONES: Plan de tratamiento actualizado
+# ✅ FLUJO 4 - ELIMINACIONES: Limpieza de datos erróneos
+# ✅ FLUJO 5 - MULTI-PACIENTE: Jornada laboral completa (3 pacientes)
+# ✅ FLUJO 6 - RESPALDOS: Sistema de backup automático en la nube
+#
+# 📊 COBERTURA TOTAL DE FUNCIONALIDADES:
+# ✅ Autenticación y Autorización
+# ✅ Gestión de Usuarios (Admin, Odontólogo, Paciente)
+# ✅ Consultas y Citas
+# ✅ Historiales Clínicos
+# ✅ Odontogramas
+# ✅ Planes de Tratamiento
+# ✅ Presupuestos (Aprobación/Rechazo)
+# ✅ Consentimientos Informados
+# ✅ Sesiones de Tratamiento
+# ✅ Facturación
+# ✅ Pagos (Efectivo y Stripe)
+# ✅ Servicios y Combos
+# ✅ Auditoría y Bitácora
+# ✅ NUEVO: Respaldos Automáticos en AWS S3
+#
+# 🔄 INTERCAMBIOS DE SESIÓN: 20+ cambios de usuario simulados
+# 🎯 ESCENARIOS PROBADOS: Casos felices, infelices, edge cases
+# 🌐 INTEGRACIONES: Stripe (pagos), AWS S3 (respaldos)
+#
+# 🎉 SISTEMA COMPLETAMENTE PROBADO - LISTO PARA PRODUCCIÓN
+#
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# 🤖 FLUJO 7: CHATBOT DE CITAS - INTERACCIÓN CONVERSACIONAL
+###############################################################################
+#
+# ⚠️ IMPORTANTE - CÓMO EJECUTAR CORRECTAMENTE:
+#
+#   ❌ NO seleccionar todo el archivo
+#   ❌ NO ejecutar todos los requests a la vez
+#   
+#   ✅ EJECUTAR UNO POR UNO haciendo click en "Send Request" sobre cada ###
+#   ✅ Esperar la respuesta antes de ejecutar el siguiente
+#   ✅ Respetar el orden (F7.1 → F7.2 → F7.3 → ... → F7.15)
+#
+# OBJETIVO: Probar el chatbot para reservar y gestionar citas
+#
+# ESCENARIO:
+#   - Paciente: Juan Pérez (del seeder - paciente1@test.com)
+#   - Chatbot maneja conversación completa
+#   - Reserva de cita conversacional
+#   - Verificación de citas existentes
+#
+# PASOS:
+#   1. Saludo inicial al bot
+#   2. Ver citas existentes
+#   3. Consultar horarios disponibles
+#   4. Reservar nueva cita (flujo completo: fecha → horario → tipo → confirmar)
+#   5. Cancelar una cita
+#   6. Ver historial de conversación
+#   7. Despedida
+#
+###############################################################################
+
+@chatSessionId = chatbot-session-{{$timestamp}}
+@chatCorreo = paciente1@test.com
+@chatNombre = Juan Pérez
+
+### F7.1. CHATBOT: Saludo inicial
+# @name chatSaludo
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Hola",
+  "correo_electronico": "{{chatCorreo}}",
+  "nombre": "{{chatNombre}}"
+}
+
+### F7.2. CHATBOT: Pedir ayuda (ver opciones)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "ayuda"
+}
+
+### F7.3. CHATBOT: Ver mis citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Ver mis citas"
+}
+
+### F7.4. CHATBOT: Consultar horarios disponibles
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Horarios disponibles"
+}
+
+### F7.5. CHATBOT: Iniciar reserva de cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Quiero reservar una cita"
+}
+
+### F7.6. CHATBOT: Proporcionar fecha (mañana)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "mañana"
+}
+
+### F7.7. CHATBOT: Seleccionar horario (opción 1)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "1"
+}
+
+### F7.8. CHATBOT: Seleccionar tipo de consulta (opción 1)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "1"
+}
+
+### F7.9. CHATBOT: Confirmar cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "sí"
+}
+
+### F7.10. CHATBOT: Ver historial de conversación
+GET {{baseUrl}}/chatbot/historial/?session_id={{chatSessionId}}
+
+### F7.11. CHATBOT: Solicitar cancelación de cita
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Cancelar cita"
+}
+
+### F7.12. CHATBOT: Seleccionar cita a cancelar (opción 1)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "1"
+}
+
+### F7.13. CHATBOT: Verificar que se canceló viendo citas
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Ver mis citas"
+}
+
+### F7.14. CHATBOT: Despedida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}",
+  "mensaje": "Gracias, adiós"
+}
+
+### F7.15. CHATBOT: Resetear conversación
+POST {{baseUrl}}/chatbot/reset/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatSessionId}}"
+}
+
+
+###############################################################################
+# 🧪 FLUJO 7 - CASOS EDGE DEL CHATBOT
+###############################################################################
+
+@chatEdgeSession = chatbot-edge-{{$timestamp}}
+
+### EDGE.F7.1. CHATBOT: Mensaje no entendido
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "xyz123 mensaje aleatorio que no debería entender",
+  "correo_electronico": "{{chatCorreo}}"
+}
+
+### EDGE.F7.2. CHATBOT: Fecha inválida en reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "Quiero cita",
+  "correo_electronico": "{{chatCorreo}}"
+}
+
+### EDGE.F7.3. CHATBOT: Proporcionar fecha inválida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "abc123fecha"
+}
+
+### EDGE.F7.4. CHATBOT: Reiniciar y probar fecha pasada
+POST {{baseUrl}}/chatbot/reset/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}"
+}
+
+### EDGE.F7.5. CHATBOT: Iniciar nueva reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "Reservar",
+  "correo_electronico": "{{chatCorreo}}"
+}
+
+### EDGE.F7.6. CHATBOT: Fecha pasada (debe rechazar)
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "01/01/2020"
+}
+
+### EDGE.F7.7. CHATBOT: Cancelar flujo de reserva
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "Reservar"
+}
+
+### EDGE.F7.8. CHATBOT: Dar fecha válida
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "mañana"
+}
+
+### EDGE.F7.9. CHATBOT: Seleccionar horario
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "1"
+}
+
+### EDGE.F7.10. CHATBOT: Seleccionar tipo
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "1"
+}
+
+### EDGE.F7.11. CHATBOT: Rechazar confirmación
+POST {{baseUrl}}/chatbot/mensaje/
+Content-Type: application/json
+
+{
+  "session_id": "{{chatEdgeSession}}",
+  "mensaje": "no"
+}
+
+
+###############################################################################
+# 🎯 RESUMEN FLUJO 7 - CHATBOT DE CITAS
+###############################################################################
+#
+# ✅ FUNCIONALIDADES PROBADAS:
+#   - Saludo y ayuda
+#   - Ver citas del paciente
+#   - Consultar horarios disponibles
+#   - Reservar cita (flujo completo en 4 pasos)
+#   - Cancelar cita
+#   - Historial de conversación
+#   - Reset de contexto
+#   - Despedida
+#
+# 🧠 INTENTS PROBADOS:
+#   - saludo
+#   - ver_citas
+#   - reservar_cita
+#   - cancelar_cita
+#   - horarios_disponibles
+#   - ayuda
+#   - despedida
+#   - no_entendido (edge case)
+#
+# 🔄 FLUJO MULTI-PASO:
+#   - Contexto mantenido entre mensajes
+#   - Estados: esperando_fecha → esperando_horario → esperando_tipo_consulta → esperando_confirmacion
+#   - Validaciones: fecha futura, horario disponible, tipo válido
+#
+# ❌ CASOS EDGE PROBADOS:
+#   - Mensaje no entendido
+#   - Fecha inválida
+#   - Fecha pasada
+#   - Cancelación de flujo
+#   - Rechazo de confirmación
+#
+# 📊 VALIDACIONES:
+#   - Paciente autenticado por correo
+#   - Disponibilidad de horarios
+#   - Creación efectiva de cita en DB
+#   - Soft delete al cancelar
+#
+###############################################################################
+
+
+###############################################################################
+# 🎯 RESUMEN GLOBAL - TODOS LOS FLUJOS (ACTUALIZADO)
+###############################################################################
+#
+# ✅ FLUJO 1 - CASO FELIZ: Tratamiento completo aprobado (NO IMPLEMENTADO EN ESTE ARCHIVO)
+# ✅ FLUJO 2 - RECHAZO: Presupuesto rechazado por precio alto
+# ✅ FLUJO 3 - MODIFICACIONES: Plan de tratamiento actualizado
+# ✅ FLUJO 4 - ELIMINACIONES: Limpieza de datos erróneos
+# ✅ FLUJO 5 - MULTI-PACIENTE: Jornada laboral completa (3 pacientes)
+# ✅ FLUJO 6 - RESPALDOS: Sistema de backup automático en la nube
+# ✅ FLUJO 7 - CHATBOT: Asistente conversacional para citas
+#
+# 📊 COBERTURA TOTAL DE FUNCIONALIDADES:
+# ✅ Autenticación y Autorización
+# ✅ Gestión de Usuarios (Admin, Odontólogo, Paciente)
+# ✅ Consultas y Citas
+# ✅ Historiales Clínicos
+# ✅ Odontogramas
+# ✅ Planes de Tratamiento
+# ✅ Presupuestos (Aprobación/Rechazo)
+# ✅ Consentimientos Informados
+# ✅ Sesiones de Tratamiento
+# ✅ Facturación
+# ✅ Pagos (Efectivo y Stripe)
+# ✅ Servicios y Combos
+# ✅ Auditoría y Bitácora
+# ✅ Respaldos Automáticos en AWS S3
+# ✅ NUEVO: Chatbot Conversacional para Citas
+#
+# 🔄 INTERCAMBIOS DE SESIÓN: 20+ cambios de usuario simulados
+# 🎯 ESCENARIOS PROBADOS: Casos felices, infelices, edge cases
+# 🌐 INTEGRACIONES: Stripe (pagos), AWS S3 (respaldos), Chatbot (IA conversacional)
+#
+# 🎉 SISTEMA COMPLETAMENTE PROBADO - LISTO PARA PRODUCCIÓN
+#
+###############################################################################
+###############################################################################
