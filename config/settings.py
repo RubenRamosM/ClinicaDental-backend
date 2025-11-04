@@ -258,34 +258,29 @@ DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 # ------------------------------------
 # Base de datos (PostgreSQL)
 # ------------------------------------
-# Soporte para DATABASE_URL (Render/Heroku) o variables individuales
+# Configuración de Base de Datos
+# ------------------------------------
 import dj_database_url
 
-if os.environ.get('DATABASE_URL'):
-    # Render, Heroku u otras plataformas que usan DATABASE_URL
-    DATABASES = {
-        'default': dj_database_url.parse(
-            os.environ.get('DATABASE_URL'),
-            conn_max_age=600
-        )
-    }
-    # Asegurar que use el backend de django-tenants
-    DATABASES['default']['ENGINE'] = 'django_tenants.postgresql_backend'
-else:
-    # Variables individuales (desarrollo local)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django_tenants.postgresql_backend",
-            "NAME": os.environ.get('DB_NAME'),
-            "USER": os.environ.get('DB_USER'),
-            "PASSWORD": os.environ.get('DB_PASSWORD'),
-            "HOST": os.environ.get('DB_HOST'),
-            "PORT": os.environ.get('DB_PORT', '5432'),
-            "OPTIONS": {
-                "sslmode": "disable" if os.environ.get('DB_HOST') == 'localhost' else "require",
-            },
-        }
-    }
+# Construir DATABASE_URL desde variables individuales si no existe
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    # Construir desde variables individuales (desarrollo local)
+    db_name = os.environ.get('DB_NAME', 'clinica_dental_dev')
+    db_user = os.environ.get('DB_USER', 'postgres')
+    db_password = os.environ.get('DB_PASSWORD', '')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_port = os.environ.get('DB_PORT', '5432')
+    DATABASE_URL = f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+
+# Parsear DATABASE_URL
+DATABASES = {
+    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+}
+
+# Asegurar que use el backend de django-tenants
+DATABASES['default']['ENGINE'] = 'django_tenants.postgresql_backend'
 
 # ------------------------------------
 # Password validators
