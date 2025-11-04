@@ -2,7 +2,11 @@
 # exit on error
 set -o errexit
 
-echo "🔧 Instalando dependencias..."
+echo "🔧 Instalando dependencias del sistema..."
+apt-get update
+apt-get install -y libmagic1
+
+echo "🔧 Instalando dependencias de Python..."
 pip install -r requirements.txt
 
 echo "📦 Recolectando archivos estáticos..."

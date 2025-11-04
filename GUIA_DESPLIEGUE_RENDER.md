@@ -125,7 +125,7 @@ SECRET_KEY=(haz clic en "Generate" para crear una automática)
 ```
 DATABASE_URL=(pega la Internal Database URL que guardaste)
 ```
-
+postgresql://clinicadental_kx8i_user:9xb0k96HTwrKtPhkOTo7kn3P1KAM0Gkm@dpg-d44o7juuk2gs73fj3o0g-a/clinicadental_kx8i
 #### Dominios Permitidos
 ```
 ALLOWED_HOSTS=.onrender.com,.psicoadmin.xyz,psicoadmin.xyz,www.psicoadmin.xyz,localhost

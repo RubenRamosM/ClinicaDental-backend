@@ -48,7 +48,7 @@ TTL: Automatic
    - Plan: **Free**
 3. Clic "Create Database"
 4. **⚠️ IMPORTANTE:** Copia la "Internal Database URL" (la necesitarás en el siguiente paso)
-
+postgresql://clinicadental_kx8i_user:9xb0k96HTwrKtPhkOTo7kn3P1KAM0Gkm@dpg-d44o7juuk2gs73fj3o0g-a/clinicadental_kx8i
 ---
 
 ## 🚀 PASO 4: CREAR WEB SERVICE (10 minutos)
