@@ -7,8 +7,9 @@ import django_tenants.postgresql_backend.base
 
 class Migration(migrations.Migration):
 
+    initial = True
+
     dependencies = [
-        ('comun', '0001_initial'),
     ]
 
     operations = [
